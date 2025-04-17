@@ -1,6 +1,7 @@
 """This is a Flask Web App"""
 
 import os
+import logging
 from flask import (
     Flask,
     render_template,
@@ -28,6 +29,15 @@ def create_app():
     # Create MongoDB connections
     cxn = pymongo.MongoClient(os.getenv("MONGO_URI"))
     db = cxn[os.getenv("MONGO_DBNAME")]
+
+    try:
+        cxn.admin.command("ping")
+        print(" *", "Connected to MongoDB!")
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        print(" * MongoDB connection error:", e)
+    
+    # Set up logging in Docker container's output
+    logging.basicConfig(level=logging.DEBUG)
 
     # Drop all collections to prevent duplicated data getting
     # inserted into the database whenever the app is restarted

@@ -5,7 +5,7 @@ services:
     ports:
       - "10000:5000"
     environment:
-      - MONGO_DBNAME=okaycooldb
+      - MONGO_DBNAME=dot-ics
       - MONGO_URI=mongodb://admin:secret@mongodb:27017
       - FLASK_APP=app.py
       - FLASK_ENV=development

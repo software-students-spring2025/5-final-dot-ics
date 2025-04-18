@@ -35,7 +35,7 @@ class ICSClient:
         pass
 
     def parse_text_to_event_data(self, text: str) -> dict:
-            prompt = f"""
+        prompt = f"""
         Extract event title, date in format YYYY-MM-DD, time, location, and implied description from the following text. Respond only in JSON format. 
         Recognize that users may use shorthand to denote things, such as 'tmr' denoting 'tomorrow', and things of that nature. 
         Also, recognize the difference between "this ..." and "next ...", with the weeks starting on Sunday and ending on Saturday.
@@ -47,18 +47,18 @@ class ICSClient:
         {text}
         """
 
-            response = model.generate_content(prompt)
-            match = re.search(r'\{.*\}', response.text, re.DOTALL)
-            
-            if match:
-                try:
-                    return json.loads(match.group(0))
-                except json.JSONDecodeError:
-                    print("Failed to parse JSON:\n", response.text)
-            else:
-                print("No JSON detected:\n", response.text)
+        response = model.generate_content(prompt)
+        match = re.search(r'\{.*\}', response.text, re.DOTALL)
+        
+        if match:
+            try:
+                return json.loads(match.group(0))
+            except json.JSONDecodeError:
+                print("Failed to parse JSON:\n", response.text)
+        else:
+            print("No JSON detected:\n", response.text)
 
-            return None
+        return None
         
         # return {
         #     "name": "Dinner with Family",

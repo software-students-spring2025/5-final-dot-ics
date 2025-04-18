@@ -1,0 +1,7 @@
+<p>{{error}}</p>
+<h1>Create User</h1>
+<form id="createLoginForm" method="POST" action="{{ url_for('create_user') }}">
+    Username: <input type="text" id="username" name="username" required><br>
+    Password: <input type="password" id="password" name="password" required><br>
+    <input type="submit" value="Submit">
+</form>

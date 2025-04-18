@@ -19,6 +19,19 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    networks:
+      - app-network
+
+  ics-client:
+    build: ./ics-client
+    container_name: ics_client
+    depends_on:
+      - mongodb
+    env_file:
+      - ./ics-client/.env
+    networks:
+      - app-network
+
 
 volumes:
   mongo-data:

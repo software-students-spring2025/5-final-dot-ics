@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ICS File Generator</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
 
@@ -16,28 +17,117 @@
     </div>
 
     <ul id="event-list" class="event-list">
-        <!-- Generated events will appear here -->
+        {% for event in events %}
+            <li class="show"
+                onclick='toggleDetails(event, {
+                    title: "{{ event.title|escape }}",
+                    start: "{{ event.start }}",
+                    end: "{{ event.end }}",
+                    location: "{{ event.location|escape }}",
+                    description: "{{ event.description|escape }}",
+                    recurring_info: "{{ event.recurring_info|escape }}"
+                })'>
+                <div class="event-content">
+                    <div>
+                        <div class="event-title">{{ event.title }}</div>
+                        <div class="event-datetime">{{ event.start }}</div>
+                    </div>
+                    <div class="icon-container">
+                        <div class="icon download-icon" onclick='handleDownload(event, {
+                            id: "{{event._id|escape}}"
+                        })'>
+                            <i class="fas fa-download"></i>
+                        </div>
+                        <div class="icon delete-icon" onclick='handleDelete(event, {
+                            id: "{{event._id|escape}}"
+                        })'>
+                            <i class="fas fa-trash-alt"></i>
+                        </div>
+                    </div>
+                </div>
+            </li>
+        {% endfor %}
     </ul>
 
     <script>
 
-    function generateEvent() {
-        const input = document.getElementById("event-input");
-        const list = document.getElementById("event-list");
+        function generateEvent() {
+            const input = document.getElementById("event-input");
+            const list = document.getElementById("event-list");
 
-        if (input.value.trim()) {
-            const li = document.createElement("li");
-            li.textContent = input.value;
-            const first_list_item = list.firstChild
-            list.insertBefore(li, first_list_item)
-            input.value = "";
-            setTimeout(() => {
-                li.classList.add("show")
-            }, 10);
+            if (input.value.trim()) {
+                const li = document.createElement("li");
+                li.textContent = input.value;
+                const first_list_item = list.firstChild
+                list.insertBefore(li, first_list_item)
+                input.value = "";
+                setTimeout(() => {
+                    li.classList.add("show")
+                }, 10);
+            }
+
         }
 
-    }
+        function handleDelete(clickEvent, eventData) {
+            clickEvent.stopPropagation()
+            console.log(`deleting event ${eventData.id}`)
+        }
+        
+        function handleDownload(clickEvent, eventData) {
+            clickEvent.stopPropagation()
+            console.log(`downloading event ${eventData.id}`)
+        }
+
+
+        function toggleDetails(clickEvent, eventData) {
+            const popup = document.getElementById("event-popup");
+            const overlay = document.getElementById("overlay");
+            const content = document.getElementById("popup-content");
+
+            // Fill content
+            content.innerHTML = `
+                <strong>${eventData.title}</strong><br>
+                🗓️ ${eventData.start} → ${eventData.end}<br>
+                📍 ${eventData.location}<br>
+                📝 ${eventData.description}<br>
+                ${eventData.recurring_info ? "🔁 " + eventData.recurring_info : "One-time event"}
+            `;
+
+            // Position the popup to the right of the clicked list item
+            const li = clickEvent.currentTarget;
+            const rect = li.getBoundingClientRect();
+
+            popup.style.top = `${rect.top + window.scrollY}px`;
+            popup.style.left = `${rect.right + 20}px`; // 20px spacing to the right
+
+            // Show popup and overlay
+            overlay.style.display = "block";
+            popup.style.display = "block";
+
+            requestAnimationFrame(() => {
+                popup.classList.add("show");
+            });
+        }
+
+        function hidePopup() {
+            const popup = document.getElementById("event-popup");
+            const overlay = document.getElementById("overlay");
+
+            popup.classList.remove("show");
+            overlay.style.display = "none";
+
+            // Optional: Delay hiding popup to allow transition to finish
+            setTimeout(() => {
+                popup.style.display = "none";
+            }, 250);
+        }
     </script>
+    
+    <div id="overlay" class="overlay" onclick="hidePopup()"></div>
+
+    <div id="event-popup" class="popup-card">
+        <div id="popup-content"></div>
+    </div>
 
 </body>
 </html>

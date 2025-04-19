@@ -8,6 +8,8 @@ services:
       - ./web-app/.env
     depends_on:
       - mongodb
+    networks:
+      - app-network
   
   mongodb:
     environment:

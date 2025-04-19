@@ -5,6 +5,10 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
 import uuid
+import google.generativeai as genai
+import os
+import json
+import re
 
 load_dotenv()
 mongo_uri = os.getenv("MONGO_URI")
@@ -13,19 +17,56 @@ client = MongoClient(mongo_uri)
 db = client[db_name]
 events_collection = db["events"]
 
+key=os.getenv("GOOGLE_API_KEY")
+# Authenticate
+genai.configure(api_key=key)
+model = genai.GenerativeModel("gemini-2.0-flash")
+
+event_schema = {
+    "event_name": "string (name of the event)",
+    "date": "string (format: YYYY-MM-DD, e.g. 2025-04-30)",
+    "time": "string (optional, e.g. 14:00 PM)",
+    "location": "string (where the event is happening)",
+    "description": "string (optional, a short summary of the event)"
+}
+
 class ICSClient:
     def __init__(self):
         pass
 
     def parse_text_to_event_data(self, text: str) -> dict:
-        # We will replace these default values with implementation of the language model.
-        return {
-            "name": "Dinner with Family",
-            "start": datetime(2025, 4, 18, 14, 0, 0),
-            "end": datetime(2025, 4, 18, 15, 0, 0),
-            "description": f"User Input: {text}\nLLM Understanding: Dinner with family at home from ___ to ___.",
-            "location": "Home"
-        }
+        prompt = f"""
+        Extract event title, date in format YYYY-MM-DD, time, location, and implied description from the following text. Respond only in JSON format. 
+        Recognize that users may use shorthand to denote things, such as 'tmr' denoting 'tomorrow', and things of that nature. 
+        Also, recognize the difference between "this ..." and "next ...", with the weeks starting on Sunday and ending on Saturday.
+
+        Schema:
+        {json.dumps(event_schema, indent=2)}
+
+        Text:
+        {text}
+        """
+
+        response = model.generate_content(prompt)
+        match = re.search(r'\{.*\}', response.text, re.DOTALL)
+        
+        if match:
+            try:
+                return json.loads(match.group(0))
+            except json.JSONDecodeError:
+                print("Failed to parse JSON:\n", response.text)
+        else:
+            print("No JSON detected:\n", response.text)
+
+        return None
+        
+        # return {
+        #     "name": "Dinner with Family",
+        #     "start": datetime(2025, 4, 18, 14, 0, 0),
+        #     "end": datetime(2025, 4, 18, 15, 0, 0),
+        #     "description": f"User Input: {text}\nLLM Understanding: Dinner with family at home from ___ to ___.",
+        #     "location": "Home"
+        # }
 
     def store_event(self, event_data, ics_file_path):
         event_data["created_at"] = datetime.now()
@@ -69,3 +110,11 @@ if __name__ == "__main__":
     text_input = "Friday dinner with fam at home"   # to be replaced w/ text from web-app.
     ics_file_path = client.create_event(text_input)
     print(f".ICS file created.")
+
+    # Testing LLM
+    sample_text = """
+     Group project meeting next Fri 10pm in the conference room located at the Silver Building.
+    """
+    event = client.parse_text_to_event_data(sample_text)
+    print("Prompt: ", sample_text)
+    print(json.dumps(event, indent=2) if event else "No event extracted.")

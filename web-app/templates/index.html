@@ -1,1 +1,43 @@
-<h1>hello world</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ICS File Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+    <h1>ICS File Generator</h1>
+
+    <div class="description-bar-container">
+        <input id="event-input" class="event-description-input" type="text" placeholder="Describe an event" />
+        <button class="generate-event-button" onclick="generateEvent()">Generate</button>
+    </div>
+
+    <ul id="event-list" class="event-list">
+        <!-- Generated events will appear here -->
+    </ul>
+
+    <script>
+
+    function generateEvent() {
+        const input = document.getElementById("event-input");
+        const list = document.getElementById("event-list");
+
+        if (input.value.trim()) {
+            const li = document.createElement("li");
+            li.textContent = input.value;
+            const first_list_item = list.firstChild
+            list.insertBefore(li, first_list_item)
+            input.value = "";
+            setTimeout(() => {
+                li.classList.add("show")
+            }, 10);
+        }
+
+    }
+    </script>
+
+</body>
+</html>

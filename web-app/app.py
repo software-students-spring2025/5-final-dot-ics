@@ -121,7 +121,8 @@ def create_app():
                 user_info = db.users.find_one({"_id": new_user.inserted_id})
                 current_user = User(user_info["_id"], user_info["username"])
                 app.logger.debug("* create_user(): user created: %s", current_user.username)
-                login_user(current_user)
+                login = login_user(current_user)
+                app.logger.debug("* create_user(): login success: %s", login)
                 return redirect(url_for("index"))  # Redirect if login successful
             else:
                 return render_template("create_user.html", error="Please choose a different username and password")

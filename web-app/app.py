@@ -14,6 +14,7 @@ from flask_login import (
     UserMixin,
     login_required,
     login_user,
+    logout_user,
     current_user
 )
 from bson.objectid import ObjectId
@@ -132,6 +133,14 @@ def create_app():
 
         return render_template("create_user.html")
 
+    @app.route("/logout")
+    @login_required
+    def logout():
+        """
+        Route for logging user out
+        """
+        logout_user()
+        return redirect(url_for("index"))
 
     @flask_app.route("/")
     @login_required

@@ -13,11 +13,13 @@ from flask_login import (
     LoginManager,
     UserMixin,
     login_required,
-    login_user
+    login_user,
+    current_user
 )
 from bson.objectid import ObjectId
 from dotenv import load_dotenv, dotenv_values
 import pymongo
+
 
 
 load_dotenv()  # load environment variables from .env file
@@ -139,7 +141,10 @@ def create_app():
         Returns:
             rendered template (str): The rendered HTML template.
         """
-        return render_template("index.html")
+        user_id = current_user.get_id()
+        events = db.events.find({"user_id": user_id})
+        event_list = list(events)
+        return render_template("index.html", events = event_list)
 
     @flask_app.errorhandler(Exception)
     def handle_error(e):

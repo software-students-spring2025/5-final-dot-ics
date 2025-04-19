@@ -133,7 +133,7 @@ def create_app():
 
         return render_template("create_user.html")
 
-    @app.route("/logout")
+    @flask_app.route("/logout")
     @login_required
     def logout():
         """

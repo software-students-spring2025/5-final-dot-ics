@@ -7,8 +7,7 @@ from flask import (
     render_template,
     request,
     url_for,
-    redirect,
-    session
+    redirect
 )
 from flask_login import (
     LoginManager,
@@ -16,6 +15,7 @@ from flask_login import (
     login_required,
     login_user
 )
+from bson.objectid import ObjectId
 from dotenv import load_dotenv, dotenv_values
 import pymongo
 
@@ -68,7 +68,8 @@ def create_app():
 
     @login_manager.user_loader
     def load_user(user_id):
-        user_info = db.users.find_one({"_id": user_id})
+        user_info = db.users.find_one({"_id": ObjectId(user_id)})
+        app.logger.debug("* load_user(): user: %s", user_info)
         if not user_info:
             return None
         current_user = User(user_info["_id"], user_info["username"])
@@ -88,13 +89,13 @@ def create_app():
             # Authentication logic
             if username and password:
                 app.logger.debug("* login(): Authenticating user: %s", username)
-                app.logger.debug("* login(): user: %s", db.users.find())
-
                 user_info = db.users.find_one({"username": username})
+                app.logger.debug("* login(): user: %s", user_info)
+
                 if user_info:
                     if user_info["password"] == password:
                         app.logger.debug("* login(): User authenticated: %s", username)
-                        current_user = User(user_info["_id"], user_info["username"])
+                        current_user = User(id=user_info["_id"], username=user_info["username"])
                         login_user(current_user)
                         return redirect(url_for("index"))  # Redirect if login successful
                     else:
@@ -116,16 +117,17 @@ def create_app():
             password = request.form.get("password")
 
             if username and password:
+                if db.users.find_one({"username": username}):
+                    return render_template("create_user.html", error="Please choose a different username")
                 new_user = db.users.insert_one({"username": username, "password": password})
                 app.logger.debug("* create_user(): Inserting User: %s", new_user.inserted_id)
-                user_info = db.users.find_one({"_id": new_user.inserted_id})
-                current_user = User(user_info["_id"], user_info["username"])
+                user_info = db.users.find_one({"_id": ObjectId(new_user.inserted_id)})
+                current_user = User(id=user_info["_id"], username=user_info["username"])
                 app.logger.debug("* create_user(): user created: %s", current_user.username)
                 login = login_user(current_user)
                 app.logger.debug("* create_user(): login success: %s", login)
                 return redirect(url_for("index"))  # Redirect if login successful
-            else:
-                return render_template("create_user.html", error="Please choose a different username and password")
+
         return render_template("create_user.html")
 
 

@@ -8,8 +8,6 @@ services:
       - ./web-app/.env
     depends_on:
       - mongodb
-    networks:
-      - app-network
   
   mongodb:
     environment:
@@ -29,8 +27,6 @@ services:
       - mongodb
     env_file:
       - ./ics-client/.env
-
-
 
 volumes:
   mongo-data:

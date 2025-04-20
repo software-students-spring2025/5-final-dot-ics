@@ -1,11 +1,15 @@
-import unittest
+"""
+Module is responsible for the client testing class.
+"""
+
 from unittest.mock import patch
 from datetime import datetime
-import os
-import json
-from pymongo import MongoClient
 from zoneinfo import ZoneInfo
 from pathlib import Path
+import os
+import json
+import unittest
+from pymongo import MongoClient
 
 from client import ICSClient
 
@@ -14,6 +18,10 @@ TEST_DB_NAME = "test_ics_client_db"
 
 
 class TestICSClient(unittest.TestCase):
+    """
+    Class responsible for tests.
+    """
+
     @classmethod
     def setUpClass(cls):
         cls.mongo_client = MongoClient(MONGO_URI)
@@ -26,6 +34,11 @@ class TestICSClient(unittest.TestCase):
 
     @patch("client.model.generate_content")
     def test_parse_event_and_store(self, mock_generate):
+        """
+        test_parse_event_and_store tests the parsing of the event,
+        stores it, then checks if the store was successful.
+        """
+
         # Mock response
         mock_event_json = {
             "name": "Dinner with Friends",
@@ -33,7 +46,7 @@ class TestICSClient(unittest.TestCase):
             "start_time": "18:00",
             "end_time": "20:00",
             "location": "The Diner",
-            "description": "Chill evening dinner"
+            "description": "Chill evening dinner",
         }
         mock_generate.return_value.text = json.dumps(mock_event_json)
 
@@ -48,7 +61,7 @@ class TestICSClient(unittest.TestCase):
         # Write ICS file
         dummy_ics_path = Path("./events/event.ics")
         dummy_ics_path.parent.mkdir(exist_ok=True)
-        dummy_ics_path.write_text("BEGIN:VCALENDAR...")
+        dummy_ics_path.write_text("BEGIN:VCALENDAR...", encoding="utf-8")
 
         self.client.store_event(event_data, dummy_ics_path)
 
@@ -59,6 +72,10 @@ class TestICSClient(unittest.TestCase):
         self.assertIn("ics_file", stored)
 
     def test_create_dt_object(self):
+        """
+        test_create_dt_object tests if the datetime method works properly.
+        """
+
         dt = self.client.create_dt_object("2025-04-22", "14:30")
         self.assertEqual(dt.hour, 14)
         self.assertEqual(dt.minute, 30)
@@ -66,14 +83,21 @@ class TestICSClient(unittest.TestCase):
 
     @patch("client.model.generate_content")
     def test_create_event_full_flow(self, mock_generate):
-        mock_generate.return_value.text = json.dumps({
-            "name": "Team Sync",
-            "date": "2025-04-21",
-            "start_time": "09:00",
-            "end_time": "09:30",
-            "location": "Zoom",
-            "description": "Weekly stand-up"
-        })
+        """
+        test_create_event_full_flow tests if a created & stored event
+        exists within the MongoDB.
+        """
+
+        mock_generate.return_value.text = json.dumps(
+            {
+                "name": "Team Sync",
+                "date": "2025-04-21",
+                "start_time": "09:00",
+                "end_time": "09:30",
+                "location": "Zoom",
+                "description": "Weekly stand-up",
+            }
+        )
 
         ics_path = self.client.create_event("Team sync on Monday at 9am over Zoom")
         self.assertTrue(Path(ics_path).exists())
@@ -82,6 +106,7 @@ class TestICSClient(unittest.TestCase):
         self.assertIsNotNone(stored)
         self.assertEqual(stored["description"], "Weekly stand-up")
         Path(ics_path).unlink()
+
 
 if __name__ == "__main__":
     unittest.main()

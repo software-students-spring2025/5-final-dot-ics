@@ -9,6 +9,8 @@ python-dotenv = "*"
 pymongo = "*"
 google-generativeai = "*"
 pytest = "*"
+pylint = "*"
+black = "*"
 
 [dev-packages]
 

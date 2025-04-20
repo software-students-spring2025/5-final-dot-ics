@@ -76,7 +76,7 @@ class ICSClient:
         Schema:
         {{
         "name": "string (event title)",
-        "date": "string (format: YYY-MM-DD)",
+        "date": "string (format: YYYY-MM-DD)",
         "start_time": "string (optional, format: HH:MM in 24-hour time)",
         "end_time": "string (optional, format: HH:MM in 24-hour time)",
         "location": "string",

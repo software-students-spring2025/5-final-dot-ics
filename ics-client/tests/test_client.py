@@ -46,7 +46,7 @@ class TestICSClient(unittest.TestCase):
         self.assertEqual(event_data["start"].tzinfo, ZoneInfo("America/New_York"))
 
         # Write ICS file
-        dummy_ics_path = Path("./events/test_event.ics")
+        dummy_ics_path = Path("./events/event.ics")
         dummy_ics_path.parent.mkdir(exist_ok=True)
         dummy_ics_path.write_text("BEGIN:VCALENDAR...")
 

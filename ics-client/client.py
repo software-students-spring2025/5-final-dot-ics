@@ -16,6 +16,8 @@ from icalendar import Calendar, Event
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import google.generativeai as genai
+from bson.objectid import ObjectId
+
 
 load_dotenv()
 mongo_uri = os.getenv("MONGO_URI")
@@ -134,12 +136,13 @@ class ICSClient:
             )
         print(f".ICS stored in MongoDB with ID: {result.inserted_id}")
 
-    def create_event(self, text: str) -> str:
+    def create_event(self, text: str, user: ObjectId) -> str:
         """
         create_event method creates the event object.
         Method returns the path to the locally stored ics file.
         """
         event_data = self.parse_text_to_event_data(text)
+        event_data["user_id"] = user
 
         if "error" in event_data:
             raise ValueError(f"Failed to parse event: {event_data['error']}")
@@ -171,13 +174,9 @@ class ICSClient:
         while True:
             new_events = db.user_inputs.find({"event_created": False})
             for event in new_events:
-                ics_path = self.create_event(event["text"]) #creates event and returns local path
+                ics_path = self.create_event(event["text"], event["user_id"]) #creates event and returns local path
                 db.user_inputs.find_one_and_update({"_id": event["_id"]},{"$set": {"event_created": True}})
-                # we need to either add user id to db.events or add the db.events id to the db.user_inputs
-                # my thought is to pass a user_id to the create_event method
-                # OR maybe use a global variable that each loop sets it to the current user id -> not sure how that would translate when we are live hosting the site
-
-
+                
             # Wait before checking for new images
             time.sleep(0.5)
 

@@ -2,6 +2,7 @@
 
 import os
 import logging
+import time
 from flask import (
     Flask,
     render_template,
@@ -153,9 +154,43 @@ def create_app():
 
         #find user with user id then fetch the events of that user
         user_id = current_user.get_id()
-        events = db.events.find({"user_id": user_id})
+        events = db.events.find({"user_id": ObjectId(user_id)}).sort("created_at", pymongo.DESCENDING)
         event_list = list(events)
         return render_template("index.html", events = event_list)
+    
+    @flask_app.route("/generate_event", methods=["POST"])
+    @login_required
+    def generate_event():
+        """
+        Route that takes a prompt from the user and sends it to the llm client.
+        Returns:
+            rendered template (str): The rendered HTML template.
+        """
+        app.logger.debug("* generate_event(): text from user: %s", request.form.get("event-text"))
+        # add event to db collection storing user input and their statuses
+        user_id = current_user.get_id()
+        doc = {
+            "user_id": ObjectId(user_id),
+            "text": request.form.get("event-text"),
+            "event_created": False
+        }
+        add_event = db.user_inputs.insert_one(doc)
+        app.logger.debug("* generate_event(): event added: %s", add_event)
+        # loop/wait for the event to be processed and redirect to index
+        while True:
+            event_doc = db.user_inputs.find_one(add_event.inserted_id)
+            if event_doc["event_created"]:
+                break
+            # Wait before checking again
+            time.sleep(0.5)
+        return app.redirect(url_for("index"))
+        
+
+
+
+
+
+
 
     @flask_app.errorhandler(Exception)
     def handle_error(e):

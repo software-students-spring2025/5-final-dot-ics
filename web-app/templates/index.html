@@ -12,15 +12,18 @@
     <h1>ICS File Generator</h1>
 
     <div class="description-bar-container">
-        <input id="event-input" class="event-description-input" type="text" placeholder="Describe an event" />
-        <button class="generate-event-button" onclick="generateEvent()">Generate</button>
+        <form method="POST" action="{{ url_for('generate_event') }}">
+            <input id="event-input" class="event-description-input" name="event-text" type="text" placeholder="Describe an event" />
+            <input class="generate-event-button" type="Submit" value="Generate">
+        </form>
+        <!-- <button class="generate-event-button" onclick="generateEvent()">Generate</button> -->
     </div>
 
     <ul id="event-list" class="event-list">
         {% for event in events %}
             <li class="show"
                 onclick='toggleDetails(event, {
-                    title: "{{ event.title|escape }}",
+                    title: "{{ event.name|escape }}",
                     start: "{{ event.start }}",
                     end: "{{ event.end }}",
                     location: "{{ event.location|escape }}",
@@ -54,6 +57,8 @@
         function generateEvent() {
             const input = document.getElementById("event-input");
             const list = document.getElementById("event-list");
+
+            //post event text back to app
 
             if (input.value.trim()) {
                 const li = document.createElement("li");

@@ -11,6 +11,7 @@ import os
 import uuid
 import json
 import re
+import time
 from icalendar import Calendar, Event
 from pymongo import MongoClient
 from dotenv import load_dotenv
@@ -164,10 +165,29 @@ class ICSClient:
         self.store_event(event_data, ics_path)
 
         return str(ics_path)
+    
+    def run_client(self):
+        """Run ICS Client continuously and generate ics events as user prompts come in"""
+        while True:
+            new_events = db.user_inputs.find({"event_created": False})
+            for event in new_events:
+                ics_path = self.create_event(event["text"]) #creates event and returns local path
+                db.user_inputs.find_one_and_update({"_id": event["_id"]},{"$set": {"event_created": True}})
+                # we need to either add user id to db.events or add the db.events id to the db.user_inputs
+                # my thought is to pass a user_id to the create_event method
+                # OR maybe use a global variable that each loop sets it to the current user id -> not sure how that would translate when we are live hosting the site
+
+
+            # Wait before checking for new images
+            time.sleep(0.5)
+
+
+
 
 
 if __name__ == "__main__":
     client = ICSClient()
+    client.run_client() # run ics client continuously 
     TEXT_INPUT = (
         "Friday dinner with fam at home"  # to be replaced w/ text from web-app.
     )

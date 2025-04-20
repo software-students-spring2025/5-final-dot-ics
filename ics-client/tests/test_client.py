@@ -26,7 +26,7 @@ class TestICSClient(unittest.TestCase):
 
     @patch("client.model.generate_content")
     def test_parse_event_and_store(self, mock_generate):
-        # Mock Gemini LLM response
+        # Mock response
         mock_event_json = {
             "name": "Dinner with Friends",
             "date": "2025-04-20",
@@ -45,14 +45,14 @@ class TestICSClient(unittest.TestCase):
         self.assertIsInstance(event_data["start"], datetime)
         self.assertEqual(event_data["start"].tzinfo, ZoneInfo("America/New_York"))
 
-        # Write dummy ICS file
+        # Write ICS file
         dummy_ics_path = Path("./events/test_event.ics")
         dummy_ics_path.parent.mkdir(exist_ok=True)
         dummy_ics_path.write_text("BEGIN:VCALENDAR...")
 
         self.client.store_event(event_data, dummy_ics_path)
 
-        # Check Mongo insert
+        # Check insert
         stored = self.collection.find_one({"name": "Dinner with Friends"})
         self.assertIsNotNone(stored)
         self.assertEqual(stored["location"], "The Diner")
@@ -81,7 +81,7 @@ class TestICSClient(unittest.TestCase):
         stored = self.collection.find_one({"name": "Team Sync"})
         self.assertIsNotNone(stored)
         self.assertEqual(stored["description"], "Weekly stand-up")
-        Path(ics_path).unlink()  # Cleanup
+        Path(ics_path).unlink()
 
 if __name__ == "__main__":
     unittest.main()

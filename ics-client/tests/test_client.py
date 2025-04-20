@@ -10,6 +10,7 @@ import os
 import json
 import unittest
 from pymongo import MongoClient
+from bson.objectid import ObjectId
 
 from client import ICSClient
 
@@ -99,7 +100,7 @@ class TestICSClient(unittest.TestCase):
             }
         )
 
-        ics_path = self.client.create_event("Team sync on Monday at 9am over Zoom")
+        ics_path = self.client.create_event("Team sync on Monday at 9am over Zoom", ObjectId("5ecd3bbf875e60b4166f6699"))
         self.assertTrue(Path(ics_path).exists())
 
         stored = self.collection.find_one({"name": "Team Sync"})

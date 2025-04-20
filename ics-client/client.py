@@ -134,6 +134,8 @@ class ICSClient:
 
         self.store_event(event_data, ics_path)
 
+        return str(ics_path)
+
 if __name__ == "__main__":
     client = ICSClient()
     text_input = "Friday dinner with fam at home"   # to be replaced w/ text from web-app.

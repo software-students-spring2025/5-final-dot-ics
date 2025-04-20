@@ -32,7 +32,7 @@
                 })'>
                 <div class="event-content">
                     <div>
-                        <div class="event-title">{{ event.title }}</div>
+                        <div class="event-title">{{ event.name }}</div>
                         <div class="event-datetime">{{ event.start }}</div>
                     </div>
                     <div class="icon-container">
@@ -57,8 +57,6 @@
         function generateEvent() {
             const input = document.getElementById("event-input");
             const list = document.getElementById("event-list");
-
-            //post event text back to app
 
             if (input.value.trim()) {
                 const li = document.createElement("li");

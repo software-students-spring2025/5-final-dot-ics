@@ -1,14 +1,20 @@
-from icalendar import Calendar, Event
-from datetime import datetime, timedelta
+"""
+ICS Client module.
+Module is responsible for parsing user input,
+generating the ICS event and storing it in the MongoDB.
+"""
+
+from datetime import datetime
 from zoneinfo import ZoneInfo
 from pathlib import Path
-from pymongo import MongoClient
-from dotenv import load_dotenv
 import os
 import uuid
-import google.generativeai as genai
 import json
 import re
+from icalendar import Calendar, Event
+from pymongo import MongoClient
+from dotenv import load_dotenv
+import google.generativeai as genai
 
 load_dotenv()
 mongo_uri = os.getenv("MONGO_URI")
@@ -17,40 +23,60 @@ client = MongoClient(mongo_uri)
 db = client[db_name]
 events_collection = db["events"]
 
-key=os.getenv("GOOGLE_API_KEY")
+key = os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=key)
 model = genai.GenerativeModel("gemini-2.0-flash")
 
+
 class ICSClient:
+    """
+    Class for the ICS generation client.
+    """
+
     def __init__(self):
         pass
 
     def create_dt_object(self, date_str, time_str):
+        """
+        create_dt_object creates a date time object.
+        Method returns the object.
+        """
         if date_str in ("None", "null", "", None):
             return None
-        
-        month, day, year = map(int, date_str.split("-"))
+
+        year, month, day = map(int, date_str.split("-"))
         hour, minute = 0, 0
 
         if time_str not in ("None", "null", "", None):
             hour, minute = map(int, time_str.split(":"))
 
-        return datetime(year, month, day, hour, minute, 0, tzinfo=ZoneInfo("America/New_York"))
+        return datetime(
+            year, month, day, hour, minute, 0, tzinfo=ZoneInfo("America/New_York")
+        )
 
-    
     def parse_text_to_event_data(self, text: str) -> dict:
+        """
+        parse_text_to_event_data parses input and generates data for creating the ICS file.
+        Returns event data, or error on error.
+        """
         eastern_now = datetime.now(ZoneInfo("America/New_York"))
-        today_str = eastern_now.strftime("%m/%d/%Y")
+        today_str = eastern_now.strftime("%Y/%m/%d")
         print("Today's date (ET):", today_str)
 
         prompt = f"""
-        Extract event title, date (calculate calendar date from {today_str}, treat the word "next" or "nxt" as next week),
-        start time, end time, location, and implied description from the following text. Respond only in JSON format.
+        Extract:
+        event title, 
+        date (calculate calendar date from {today_str}, treat the word "next" or "nxt" as next week),
+        start time, 
+        end time, 
+        location, 
+        and implied description from the following text. 
+        Respond only in JSON format.
 
         Schema:
         {{
-        "event_name": "string (event title)",
-        "date": "string (format: MM-DD-YYYY)",
+        "name": "string (event title)",
+        "date": "string (format: YYYY-MM-DD)",
         "start_time": "string (optional, format: HH:MM in 24-hour time)",
         "end_time": "string (optional, format: HH:MM in 24-hour time)",
         "location": "string",
@@ -63,7 +89,7 @@ class ICSClient:
 
         response = model.generate_content(prompt)
 
-        match = re.search(r'\{.*\}', response.text, re.DOTALL)
+        match = re.search(r"\{.*\}", response.text, re.DOTALL)
         if not match:
             print("No JSON detected in response.")
             return {"error": "No valid event extracted"}
@@ -71,45 +97,51 @@ class ICSClient:
         try:
             event_data = json.loads(match.group(0))
             print("Parsed event data:", event_data)
-            start_dt = self.create_dt_object(event_data["date"], event_data["start_time"])
-            end_dt = self.create_dt_object(event_data["date"], event_data["end_time"])
+            start_dt = self.create_dt_object(
+                event_data["date"], event_data.get("start_time")
+            )
+            end_dt = self.create_dt_object(
+                event_data["date"], event_data.get("end_time")
+            )
 
             return {
-                "name": event_data.get("event_name"),
+                "name": event_data.get("name"),
                 "start": start_dt,
                 "end": end_dt,
                 "location": event_data.get("location"),
-                "description": event_data.get("description")
+                "description": event_data.get("description"),
             }
 
         except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
             print("Failed to parse event JSON:", e)
             return {"error": "Invalid event format"}
 
-        # return {
-        #     "name": "Dinner with Family",
-        #     "start": datetime(2025, 4, 18, 14, 0, 0),
-        #     "end": datetime(2025, 4, 18, 15, 0, 0),
-        #     "description": f"User Input: {text}\nLLM Understanding: Dinner with family at home from ___ to ___.",
-        #     "location": "Home"
-        # }
-
     def store_event(self, event_data, ics_file_path):
+        """
+        store_event method stores the event object in the MongoDB.
+        Method does not return.
+        """
         event_data["created_at"] = datetime.now()
 
         result = events_collection.insert_one(event_data)
         print(f"Event stored in MongoDB with ID: {result.inserted_id}")
 
-        with open(ics_file_path, 'rb') as ics_file:
+        with open(ics_file_path, "rb") as ics_file:
             ics_content = ics_file.read()
             events_collection.update_one(
-                {"_id": result.inserted_id},
-                {"$set": {"ics_file": ics_content}}
+                {"_id": result.inserted_id}, {"$set": {"ics_file": ics_content}}
             )
         print(f".ICS stored in MongoDB with ID: {result.inserted_id}")
 
     def create_event(self, text: str) -> str:
+        """
+        create_event method creates the event object.
+        Method returns the path to the locally stored ics file.
+        """
         event_data = self.parse_text_to_event_data(text)
+
+        if "error" in event_data:
+            raise ValueError(f"Failed to parse event: {event_data['error']}")
 
         cal = Calendar()
         event = Event()
@@ -131,21 +163,28 @@ class ICSClient:
 
         self.store_event(event_data, ics_path)
 
+        return str(ics_path)
+
+
 if __name__ == "__main__":
     client = ICSClient()
-    text_input = "Friday dinner with fam at home"   # to be replaced w/ text from web-app.
-    ics_file_path = client.create_event(text_input)
-    print(f".ICS file created.")
+    TEXT_INPUT = (
+        "Friday dinner with fam at home"  # to be replaced w/ text from web-app.
+    )
+    ICS_FILE_PATH = client.create_event(TEXT_INPUT)
+    print(".ICS file created.")
 
-   # Run sample prompts
+    # Run sample prompts
     samples = [
-        "Don't forget: Brunch with Sarah next Sunday at 11am at the Garden Cafe. She wants to discuss the upcoming wedding.",
-        "Group project meeting tmr at 10 at night in the conference room located at the Silver Building.",
+        "Brunch w/ Sarah next Sunday, 11am @ the Garden Cafe. To discuss the upcoming wedding.",
+        "Group project meeting tmr at 10 at night in  Silver Building conference room.",
         "project meeting, for flask web app, 2-3 next Sat Bobst Library rm 903",
-        "Meeting about next semester class registration, from 9 for 2.5 hrs, next Sat Bobst Library rm 903"
+        "Meeting abt class registration, from 9 for 2.5 hrs, next Sat Bobst Library rm 903",
     ]
 
     for i, sample_text in enumerate(samples, 1):
         print(f"\nPrompt {i}: {sample_text.strip()}")
         event = client.parse_text_to_event_data(sample_text)
-        print(json.dumps(event, indent=2, default=str) if event else "No event extracted.")
+        print(
+            json.dumps(event, indent=2, default=str) if event else "No event extracted."
+        )

@@ -12,6 +12,7 @@ import uuid
 import json
 import re
 import time
+import logging
 from icalendar import Calendar, Event
 from pymongo import MongoClient
 from dotenv import load_dotenv
@@ -30,6 +31,8 @@ key = os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=key)
 model = genai.GenerativeModel("gemini-2.0-flash")
 
+# Set up logging in Docker container's output
+logging.basicConfig(level=logging.DEBUG)
 
 class ICSClient:
     """
@@ -64,7 +67,7 @@ class ICSClient:
         """
         eastern_now = datetime.now(ZoneInfo("America/New_York"))
         today_str = eastern_now.strftime("%Y/%m/%d")
-        print("Today's date (ET):", today_str)
+        logging.debug("Today's date (ET): %s", today_str)
 
         prompt = f"""
         Extract:

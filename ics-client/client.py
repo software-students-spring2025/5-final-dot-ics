@@ -29,7 +29,7 @@ class ICSClient:
         if date_str in ("None", "null", "", None):
             return None
         
-        month, day, year = map(int, date_str.split("-"))
+        year, month, day = map(int, date_str.split("-"))
         hour, minute = 0, 0
 
         if time_str not in ("None", "null", "", None):
@@ -40,7 +40,7 @@ class ICSClient:
     
     def parse_text_to_event_data(self, text: str) -> dict:
         eastern_now = datetime.now(ZoneInfo("America/New_York"))
-        today_str = eastern_now.strftime("%m/%d/%Y")
+        today_str = eastern_now.strftime("%Y/%m/%d")
         print("Today's date (ET):", today_str)
 
         prompt = f"""
@@ -49,8 +49,8 @@ class ICSClient:
 
         Schema:
         {{
-        "event_name": "string (event title)",
-        "date": "string (format: MM-DD-YYYY)",
+        "name": "string (event title)",
+        "date": "string (format: YYY-MM-DD)",
         "start_time": "string (optional, format: HH:MM in 24-hour time)",
         "end_time": "string (optional, format: HH:MM in 24-hour time)",
         "location": "string",
@@ -71,11 +71,11 @@ class ICSClient:
         try:
             event_data = json.loads(match.group(0))
             print("Parsed event data:", event_data)
-            start_dt = self.create_dt_object(event_data["date"], event_data["start_time"])
-            end_dt = self.create_dt_object(event_data["date"], event_data["end_time"])
+            start_dt = self.create_dt_object(event_data["date"], event_data.get("start_time"))
+            end_dt = self.create_dt_object(event_data["date"], event_data.get("end_time"))
 
             return {
-                "name": event_data.get("event_name"),
+                "name": event_data.get("name"),
                 "start": start_dt,
                 "end": end_dt,
                 "location": event_data.get("location"),
@@ -110,6 +110,9 @@ class ICSClient:
 
     def create_event(self, text: str) -> str:
         event_data = self.parse_text_to_event_data(text)
+
+        if "error" in event_data:
+            raise ValueError(f"Failed to parse event: {event_data['error']}")
 
         cal = Calendar()
         event = Event()

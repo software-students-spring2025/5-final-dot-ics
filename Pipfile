@@ -6,10 +6,12 @@ name = "pypi"
 [packages]
 pytest = "*"
 python-dotenv = "*"
+pymongo = "*"
 
 [dev-packages]
 pytest = "*"
 python-dotenv = "*"
+pymongo = "*"
 
 [requires]
 python_version = "3.11"

@@ -47,4 +47,5 @@ jobs:
         env:
           MONGO_URI: mongodb://admin:secret@localhost:27017
           MONGO_DBNAME: test_ics_client_db
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: PYTHONPATH=. pipenv run pytest tests/ -v

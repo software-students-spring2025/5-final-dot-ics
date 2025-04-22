@@ -148,7 +148,7 @@ class TestICSClient(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.client.create_event(invalid_text)
 
-    @patch("pymongo.MongoClient")
+    @patch("ics_client.MongoClient")
     def test_mongo_unreachable(self, mock_mongo_client):
         """
         test_mongo_unreachable tests how ICSClient handles MongoDB being unreachable.

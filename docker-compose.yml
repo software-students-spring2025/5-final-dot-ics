@@ -23,6 +23,8 @@ services:
   ics-client:
     build: ./ics-client
     container_name: ics_client
+    ports:
+        - "10001:5001"
     depends_on:
       - mongodb
     env_file:

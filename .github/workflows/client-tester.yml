@@ -15,6 +15,7 @@ jobs:
         env:
           MONGO_INITDB_ROOT_USERNAME: admin
           MONGO_INITDB_ROOT_PASSWORD: secret
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         ports:
           - 27017:27017
         # Health check to wait for MongoDB to be ready

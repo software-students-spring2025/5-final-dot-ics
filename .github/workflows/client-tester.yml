@@ -25,10 +25,6 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-    defaults:
-      run:
-        working-directory: ics-client
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -50,5 +46,5 @@ jobs:
           MONGO_DBNAME: test_ics_client_db
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
-          export PYTHONPATH=$(pwd)/ics-client
-          pipenv run pytest tests/ -v
+          export PYTHONPATH=$(pwd)
+          pipenv run pytest ics_client/tests -v

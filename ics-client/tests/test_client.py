@@ -9,6 +9,7 @@ from pathlib import Path
 import os
 import json
 import unittest
+from unittest.mock import patch
 from pymongo import MongoClient
 
 from client import ICSClient
@@ -106,6 +107,58 @@ class TestICSClient(unittest.TestCase):
         self.assertIsNotNone(stored)
         self.assertEqual(stored["description"], "Weekly stand-up")
         Path(ics_path).unlink()
+
+    def test_parse_invalid_event(self):
+        """
+        test_parse_invalid_event tests when input does not contain a valid event.
+        """
+        invalid_text = "Just some random text"
+        event_data = self.client.parse_text_to_event_data(invalid_text)
+        self.assertIn("error", event_data)
+        self.assertEqual(event_data["error"], "No valid event extracted")
+
+    def test_invalid_date_time(self):
+        """
+        test_invalid_date_time tests invalid date time formats are handled properly.
+        """
+        invalid_date = "2025-99-99"
+        invalid_time = "25:00"
+        dt = self.client.create_dt_object(invalid_date, invalid_time)
+        self.assertIsNone(dt)
+
+        dt_invalid_time = self.client.create_dt_object("2025-04-20", "25:00")
+        self.assertIsNone(dt_invalid_time)
+
+        dt_invalid_date = self.client.create_dt_object("2025-99-99", "14:30")
+        self.assertIsNone(dt_invalid_date)
+
+    def test_create_event_invalid_data(self):
+        """
+        test_create_event_invalid_data tests that create_event method raises exception for invalid data.
+        """
+        invalid_text = "Invalid event data with no date or location"
+        with self.assertRaises(ValueError):
+            self.client.create_event(invalid_text)
+
+    @patch("pymongo.MongoClient")
+    def test_mongo_unreachable(self, mock_mongo_client):
+        """
+        test_mongo_unreachable tests how ICSClient handles MongoDB being unreachable.
+        """
+        mock_mongo_client.side_effect = Exception("MongoDB connection failed")
+        with self.assertRaises(Exception):
+            client = ICSClient()
+
+    def test_store_event_invalid_file(self):
+        """
+        test_store_event_invalid_file tests how store_event handles bad ICS paths.
+        """
+        invalid_path = Path("./non_existent_path/invalid_file.ics")
+        event_data = {"name": "Test Event", "start": datetime.now(), "end": datetime.now(), "location": "Test Location"}
+
+        with self.assertRaises(FileNotFoundError):
+            self.client.store_event(event_data, invalid_path)
+
 
 
 if __name__ == "__main__":

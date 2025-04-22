@@ -2,7 +2,7 @@ name: Flask App CI
 on: [push, pull_request]
 
 jobs:
-  test:
+  test-web-app:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -24,10 +24,10 @@ jobs:
 
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Set up Python 3.x
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.11
 
@@ -38,7 +38,7 @@ jobs:
 
       - name: Install dependencies using pipenv
         run: |
-          pipenv install --dev
+          pipenv install --dev --python $(python -c "import sys; print(sys.executable)")
 
       - name: Run tests with pytest
         env:

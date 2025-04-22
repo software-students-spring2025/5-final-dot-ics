@@ -1,7 +1,6 @@
 name: Client CI
 on: [push, pull_request]
 
-
 jobs:
   test-ics-client:
     name: Test ICS Client

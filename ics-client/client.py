@@ -19,6 +19,9 @@ import google.generativeai as genai
 load_dotenv()
 mongo_uri = os.getenv("MONGO_URI")
 db_name = os.getenv("MONGO_DBNAME")
+client = MongoClient(mongo_uri)
+db = client[db_name]
+events_collection = db["events"]
 
 key = os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=key)
@@ -31,14 +34,7 @@ class ICSClient:
     """
 
     def __init__(self):
-        try:
-            self.client = MongoClient(mongo_uri)
-            self.client.server_info()
-            self.db = self.client[db_name]
-            self.events_collection = self.db["events"]
-        except Exception as e:
-            print(f"Failed to connect to MongoDB: {e}")
-            raise Exception(f"MongoDB connection failed: {e}")
+        pass
 
     def create_dt_object(self, date_str, time_str):
         """
@@ -127,12 +123,12 @@ class ICSClient:
         """
         event_data["created_at"] = datetime.now()
 
-        result = self.events_collection.insert_one(event_data)
+        result = events_collection.insert_one(event_data)
         print(f"Event stored in MongoDB with ID: {result.inserted_id}")
 
         with open(ics_file_path, "rb") as ics_file:
             ics_content = ics_file.read()
-            self.events_collection.update_one(
+            events_collection.update_one(
                 {"_id": result.inserted_id}, {"$set": {"ics_file": ics_content}}
             )
         print(f".ICS stored in MongoDB with ID: {result.inserted_id}")

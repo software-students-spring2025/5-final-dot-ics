@@ -41,6 +41,7 @@ jobs:
       - name: Install pipenv and dependencies
         run: |
           pip install pipenv
+          pipenv --python 3.11
           pipenv install --dev
 
       - name: Run all tests with pytest

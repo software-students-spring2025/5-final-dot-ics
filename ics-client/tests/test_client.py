@@ -12,7 +12,7 @@ import unittest
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-from ics_client.ics_client import ICSClient
+from ics_client import ICSClient
 
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://admin:secret@mongodb:27017")
 TEST_DB_NAME = "test_ics_client_db"

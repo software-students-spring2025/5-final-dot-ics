@@ -24,7 +24,7 @@ class TestICSClient(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        oad_dotenv()
+        load_dotenv()
         cls.mongo_client = MongoClient(MONGO_URI)
         cls.db = cls.mongo_client[TEST_DB_NAME]
         cls.collection = cls.db["events"]

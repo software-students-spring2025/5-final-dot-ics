@@ -9,7 +9,7 @@ from pathlib import Path
 import os
 import json
 import unittest
-from unittest.mock import patch
+from dotenv import load_dotenv
 from pymongo import MongoClient
 
 from client import ICSClient
@@ -34,6 +34,10 @@ class TestICSClient(unittest.TestCase):
         self.client = ICSClient()
 
     def test_api_key_is_loaded(self):
+        """
+        test_api_key_is_loaded tests if the Google API key is loaded propely.
+        """
+
         api_key = os.getenv("GOOGLE_API_KEY")
         self.assertIsNotNone(api_key, "API key not loaded from .env file")
 
@@ -151,7 +155,7 @@ class TestICSClient(unittest.TestCase):
         """
         mock_mongo_client.side_effect = Exception("MongoDB connection failed")
         with self.assertRaises(Exception):
-            client = ICSClient()
+            ICSClient()
 
     def test_store_event_invalid_file(self):
         """

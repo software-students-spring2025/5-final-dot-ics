@@ -27,7 +27,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ics-client
+        working-directory: .
 
     steps:
       - name: Checkout code

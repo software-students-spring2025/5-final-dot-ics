@@ -203,7 +203,7 @@ app = Flask(__name__)
 ics_client = ICSClient()
 
 @app.route("/run-client", methods=["POST"])
-def process():
+def process_request():
     """
     Handle POST requests to generate an ICS event based on saved user input. 
     Returns:

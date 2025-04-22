@@ -25,6 +25,7 @@ class TestICSClient(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        oad_dotenv()
         cls.mongo_client = MongoClient(MONGO_URI)
         cls.db = cls.mongo_client[TEST_DB_NAME]
         cls.collection = cls.db["events"]
@@ -32,6 +33,10 @@ class TestICSClient(unittest.TestCase):
     def setUp(self):
         self.collection.delete_many({})
         self.client = ICSClient()
+
+    def test_api_key_is_loaded(self):
+    api_key = os.getenv("GOOGLE_API_KEY")
+    self.assertIsNotNone(api_key, "API key not loaded from .env file")
 
     @patch("client.model.generate_content")
     def test_parse_event_and_store(self, mock_generate):

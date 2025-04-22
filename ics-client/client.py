@@ -33,6 +33,7 @@ class ICSClient:
     def __init__(self):
         try:
             self.client = MongoClient(mongo_uri)
+            self.client.server_info()
             self.db = self.client[db_name]
             self.events_collection = self.db["events"]
         except Exception as e:

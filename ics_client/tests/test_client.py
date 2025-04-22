@@ -41,7 +41,7 @@ class TestICSClient(unittest.TestCase):
         api_key = os.getenv("GOOGLE_API_KEY")
         self.assertIsNotNone(api_key, "API key not loaded from .env file")
 
-    @patch("client.model.generate_content")
+    @patch("ics_client.model.generate_content")
     def test_parse_event_and_store(self, mock_generate):
         """
         test_parse_event_and_store tests the parsing of the event,
@@ -90,7 +90,7 @@ class TestICSClient(unittest.TestCase):
         self.assertEqual(dt.minute, 30)
         self.assertEqual(dt.tzinfo, ZoneInfo("America/New_York"))
 
-    @patch("client.model.generate_content")
+    @patch("ics_client.model.generate_content")
     def test_create_event_full_flow(self, mock_generate):
         """
         test_create_event_full_flow tests if a created & stored event

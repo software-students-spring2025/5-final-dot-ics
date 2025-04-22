@@ -5,9 +5,11 @@ name = "pypi"
 
 [packages]
 pytest = "*"
+python-dotenv = "*"
 
 [dev-packages]
 pytest = "*"
+python-dotenv = "*"
 
 [requires]
-python_version = "3.13"
+python_version = "3.11"

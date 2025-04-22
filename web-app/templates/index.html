@@ -33,7 +33,7 @@
                         <div class="event-datetime">{{ event.start }}</div>
                     </div>
                     <div class="icon-container">
-                        <div class="icon download-icon" onclick='handleDownload(event, {
+                        <div class="icon download-icon" download="{{event.name}}.ics" onclick='handleDownload(event, {
                             id: "{{event._id|escape}}"
                         })'>
                             <i class="fas fa-download"></i>
@@ -69,12 +69,12 @@
         }
 
         function handleDelete(clickEvent, eventData) {
-            clickEvent.stopPropagation()
+            window.location.href=url_for('delete', id=eventData.id) 
             console.log(`deleting event ${eventData.id}`)
         }
         
         function handleDownload(clickEvent, eventData) {
-            clickEvent.stopPropagation()
+            window.location.href=url_for('download', id=eventData.id)
             console.log(`downloading event ${eventData.id}`)
         }
 

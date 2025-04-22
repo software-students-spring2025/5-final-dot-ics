@@ -2,6 +2,7 @@
 
 import os
 import logging
+import requests
 from flask import (
     Flask,
     render_template,
@@ -17,6 +18,7 @@ from flask_login import (
     logout_user,
     current_user
 )
+from datetime import datetime
 from bson.objectid import ObjectId
 from dotenv import load_dotenv, dotenv_values
 import pymongo
@@ -142,7 +144,6 @@ def create_app():
         logout_user()
         return redirect(url_for("index"))
 
-
     @flask_app.route("/")
     @login_required
     def index():
@@ -168,6 +169,53 @@ def create_app():
             rendered template (str): The rendered HTML template.
         """
         return render_template("error.html", error=e)
+    
+    @flask_app.route("/generate-event", methods=["POST"])
+    @login_required
+    def generate_event():
+        """
+        Route that handles form submission to generate a 
+        calendar event from user input.
+
+        This route takes the event description submitted by the user, stores 
+        it in the database, and then triggers the ICS generation process.
+        """
+       
+        text = request.form["event-description-input"]
+        user_id = current_user.get_id()
+        doc = {
+            "user_id": ObjectId(user_id),
+            "text": text,
+            "created_at": datetime.now()
+        }
+
+        new_entry_id = db.events.insert_one(doc).inserted_id
+        app.logger.debug("* generate_event(): Inserted 1 entry: %s", new_entry_id)
+
+        # Trigger the /run-client endpoint in the ml_client service
+        run_client_url = "http://ics-client:5001/run-client"
+        try:
+            response = requests.post(
+                run_client_url,
+                json={"entry_id": str(new_entry_id)},
+                timeout=5,
+            )
+        except requests.exceptions.RequestException as e:
+            app.logger.error("*** generate_event(): Request failed: %s", e)
+            return "Error creating ICS file", 500
+
+        if response.status_code == 200:
+            data = response.json()
+            status = data.get("status")
+            updated_entry_id = data.get("entry_id")
+
+            app.logger.debug(
+                "*** generate_event(): status=%s, entry_id=%s",
+                status,
+                updated_entry_id,
+            )
+            return redirect(url_for("index"))
+        return "Error creating ICS file", 500
 
     return flask_app
 

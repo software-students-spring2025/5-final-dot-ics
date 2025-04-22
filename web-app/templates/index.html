@@ -22,17 +22,16 @@
         {% for event in events %}
             <li class="show"
                 onclick='toggleDetails(event, {
-                    title: "{{ event.title|escape }}",
-                    start: "{{ event.start }}",
-                    end: "{{ event.end }}",
-                    location: "{{ event.location|escape }}",
-                    description: "{{ event.description|escape }}",
-                    recurring_info: "{{ event.recurring_info|escape }}"
+                    name: "{{ event.event_data.name|escape }}",
+                    start: "{{ event.event_data.start }}",
+                    end: "{{ event.event_data.end }}",
+                    location: "{{ event.event_data.location|escape }}",
+                    description: "{{ event.event_data.description|escape }}"
                 })'>
                 <div class="event-content">
                     <div>
-                        <div class="event-title">{{ event.title }}</div>
-                        <div class="event-datetime">{{ event.start }}</div>
+                        <div class="event-title">{{ event.event_data.name }}</div>
+                        <div class="event-datetime">{{ event.event_data.start }}</div>
                     </div>
                     <div class="icon-container">
                         <div class="icon download-icon" download="{{event.name}}.ics" onclick='handleDownload(event, {
@@ -53,22 +52,6 @@
 
     <script>
 
-        function generateEvent() {
-            const input = document.getElementById("event-input");
-            const list = document.getElementById("event-list");
-
-            if (input.value.trim()) {
-                const li = document.createElement("li");
-                li.textContent = input.value;
-                const first_list_item = list.firstChild
-                list.insertBefore(li, first_list_item)
-                input.value = "";
-                setTimeout(() => {
-                    li.classList.add("show")
-                }, 10);
-            }
-
-        }
 
         function handleDelete(clickEvent, eventData) {
             window.location.href=url_for('delete', id=eventData.id) 
@@ -88,11 +71,10 @@
 
             // Fill content
             content.innerHTML = `
-                <strong>${eventData.title}</strong><br>
+                <strong>${eventData.name}</strong><br>
                 🗓️ ${eventData.start} → ${eventData.end}<br>
                 📍 ${eventData.location}<br>
                 📝 ${eventData.description}<br>
-                ${eventData.recurring_info ? "🔁 " + eventData.recurring_info : "One-time event"}
             `;
 
             // Position the popup to the right of the clicked list item

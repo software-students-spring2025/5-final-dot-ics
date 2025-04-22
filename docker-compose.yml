@@ -21,12 +21,14 @@ services:
       - mongo-data:/data/db
 
   ics-client:
-    build: ./ics_client
+    build: ./ics-client
     container_name: ics_client
+    ports:
+        - "10001:5001"
     depends_on:
       - mongodb
     env_file:
-      - ./ics_client/.env
+      - ./ics-client/.env
 
 volumes:
   mongo-data:

@@ -7,13 +7,13 @@ name = "pypi"
 icalendar = "*"
 python-dotenv = "*"
 pymongo = "*"
-google-generativeai = "*"
 pytest = "*"
 pylint = "*"
 black = "*"
+flask = "*"
+google-genai = "*"
 
 [dev-packages]
-pytest = "*"
 
 [requires]
 python_version = "3.11"

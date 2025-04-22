@@ -17,7 +17,6 @@ from client import ICSClient
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://admin:secret@mongodb:27017")
 TEST_DB_NAME = "test_ics_client_db"
 
-
 class TestICSClient(unittest.TestCase):
     """
     Class responsible for tests.
@@ -35,8 +34,8 @@ class TestICSClient(unittest.TestCase):
         self.client = ICSClient()
 
     def test_api_key_is_loaded(self):
-    api_key = os.getenv("GOOGLE_API_KEY")
-    self.assertIsNotNone(api_key, "API key not loaded from .env file")
+        api_key = os.getenv("GOOGLE_API_KEY")
+        self.assertIsNotNone(api_key, "API key not loaded from .env file")
 
     @patch("client.model.generate_content")
     def test_parse_event_and_store(self, mock_generate):

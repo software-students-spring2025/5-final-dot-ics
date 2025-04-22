@@ -166,3 +166,65 @@ h1 {
   font-size: 1.5em;
   margin-right: 10px;
 }
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  
+}
+
+.login-body, .sign-up-body {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex-direction: column;
+  padding-top: 150px;
+  min-height: 100vh; /* full height */
+  margin: 0;
+}
+
+.username-input, .password-input, .login-submit-button, .sign-up-submit-button {
+  margin-bottom: 10px;
+  border: solid 2px#41403E;
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+}
+
+.login-container, .sign-up-container {
+  border: solid 7px#41403E;
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+  padding: 30px;
+  box-shadow: 10px;
+  font-family: "Comic Sans MS", "Comic Sans", cursive;
+}
+
+.app-header {
+  display: flex;
+  justify-content: center;
+  font-family: "Comic Sans MS", "Comic Sans", cursive;
+}
+
+.logout-button {
+  position: fixed;
+  bottom: 100px;
+  right: 100px;
+  padding: 10px 20px;
+  background-color: #ff4d4d; /* red-ish */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.logout-button:hover {
+  background-color: #e63b3b;
+  transform: scale(1.05);
+}
+
+.logout-button:active {
+  transform: scale(0.95);
+}

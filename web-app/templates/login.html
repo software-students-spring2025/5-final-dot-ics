@@ -6,14 +6,17 @@
     <title>ICS File Generator</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-<body>
+<body class="login-body">
 <p>{{error}}</p>
-<h1>Login</h1>
-<form id="loginForm" method="POST" action="{{ url_for('login') }}">
-    Username: <input type="text" id="username" name="username"><br>
-    Password: <input type="password" id="password" name="password"><br>
-    <input type="submit" value="Submit">
-</form>
-<a href="{{url_for('create_user')}}">Create an Account</a>
+<h1 class="app-header">ICS File Generator</h1>
+<div class="login-container">
+    <h1>Login</h1>
+    <form id="loginForm" method="POST" action="{{ url_for('login') }}">
+        Username: <input type="text" class="username-input" id="username" name="username"><br>
+        Password: <input type="password" class="password-input" id="password" name="password"><br>
+        <input class="login-submit-button" type="submit" value="Submit">
+    </form>
+    <a class="create-account-link" href="{{url_for('create_user')}}">Create an Account</a>
+</div>
 </body>
 </html>

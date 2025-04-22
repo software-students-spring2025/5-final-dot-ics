@@ -50,4 +50,4 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
           export PYTHONPATH=$(pwd)/ics-client
-          pytest ics-client/tests/ -v --tb=short
+          pipenv run pytest tests/ -v

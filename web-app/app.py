@@ -5,6 +5,7 @@ import logging
 import requests
 from flask import (
     Flask,
+    Response,
     render_template,
     request,
     url_for,
@@ -155,9 +156,61 @@ def create_app():
 
         #find user with user id then fetch the events of that user
         user_id = current_user.get_id()
-        events = db.events.find({"user_id": user_id})
+        events = db.events.find({"user_id": ObjectId(user_id)}).sort("created_at", pymongo.DESCENDING)
         event_list = list(events)
         return render_template("index.html", events = event_list)
+    
+    @flask_app.route("/download/<id>")
+    def download(id):
+        """
+        Stream ics file from MongoDB
+
+        Args:
+            id: The ID of the ics event
+
+        Returns:
+            rendered template (str): The rendered HTML template.
+        """
+        try:
+            # Convert string ID to ObjectId
+            object_id = ObjectId(id)
+
+            # Get the data from MongoDB
+            event_doc = db.events.find_one({'_id': object_id})
+
+            # Return the image as a response
+            return Response(event_doc['ics_file'], mimetype='text/calendar')
+
+        except Exception as e:
+            flask_app.logger.error("Error streaming ics: %s", str(e))
+            return handle_error(e)
+    
+    @flask_app.route("/delete/<id>")
+    def delete(id):
+        """
+        Delete event from MongoDB
+
+        Args:
+            id: The ID of the ics event
+
+        Returns:
+            ICS file response
+        """
+        try:
+            # Convert string ID to ObjectId
+            object_id = ObjectId(id)
+
+            # Get the data from MongoDB
+            event_doc = db.events.delete_one({'_id': object_id})
+
+            # Return the image as a response
+            return redirect(url_for("index"))
+
+        except Exception as e:
+            flask_app.logger.error("Error deleting event: %s", str(e))
+            return handle_error(e)
+    
+
 
     @flask_app.errorhandler(Exception)
     def handle_error(e):

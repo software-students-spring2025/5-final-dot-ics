@@ -31,14 +31,18 @@ jobs:
         with:
           python-version: 3.11
 
-      - name: Install dependencies
+      - name: Install pipenv
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt  # Install the necessary dependencies
+          pip install pipenv  # Install pipenv globally
+
+      - name: Install dependencies using pipenv
+        run: |
+          pipenv install --dev
 
       - name: Run tests with pytest
         env:
           MONGO_URI: mongodb://admin:secret@localhost:27017
           MONGO_DBNAME: test_db
         run: |
-          pytest --maxfail=1 --disable-warnings -q  # Run tests, stop after 1 failure, disable warnings, quiet output
+          pipenv run pytest --maxfail=1

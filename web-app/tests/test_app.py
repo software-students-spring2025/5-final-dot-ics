@@ -33,7 +33,7 @@ def test_create_user(app, mongo):
     """
     test_create_user tests creating a new user and logging in.
     """
-    response = app.client.post('/create_user', data=dict(
+    response = app.post('/create_user', data=dict(
         username='testuser',
         password='password'
     ), follow_redirects=True)
@@ -51,15 +51,15 @@ def test_login(app, mongo):
 
     mongo.db.users.insert_one({"username": "testuser", "password": "password"})
 
-    response = app.client.post('/login', data=dict(
+    response = app.post('/login', data=dict(
         username='testuser',
         password='password'
     ), follow_redirects=True)
 
     app.assertRedirects(response, '/')
     
-    with app.client:
-        response = app.client.get('/')
+    with app:
+        response = app.get('/')
         app.assertIn(b"testuser", response.data)
 
 def test_logout(mongo):
@@ -69,19 +69,19 @@ def test_logout(mongo):
 
     mongo.db.users.insert_one({"username": "testuser", "password": "password"})
 
-    app.client.post('/login', data=dict(
+    app.post('/login', data=dict(
         username='testuser',
         password='password'
     ), follow_redirects=True)
 
-    response = app.client.get('/logout', follow_redirects=True)
+    response = app.get('/logout', follow_redirects=True)
     
 
     app.assertRedirects(response, '/')
     
 
-    with app.client:
-        response = app.client.get('/')
+    with app:
+        response = app.get('/')
         app.assertNotIn(b"testuser", response.data)
 
 def test_index_page(mongo):
@@ -99,12 +99,12 @@ def test_index_page(mongo):
         "description": "Test Description"
     })
 
-    app.client.post('/login', data=dict(
+    app.post('/login', data=dict(
         username='testuser',
         password='password'
     ), follow_redirects=True)
 
-    response = app.client.get('/')
+    response = app.get('/')
     app.assertIn(b"Test Event", response.data)
     app.assertIn(b"Test Location", response.data)
 
@@ -115,12 +115,12 @@ def test_invalid_date_format(mongo):
 
     mongo.db.users.insert_one({"username": "testuser", "password": "password"})
 
-    app.client.post('/login', data=dict(
+    app.post('/login', data=dict(
         username='testuser',
         password='password'
     ), follow_redirects=True)
 
-    response = app.client.post('/create_event', data=dict(
+    response = app.post('/create_event', data=dict(
         name="Test Event",
         start_date="2025-99-99",  # Invalid date
         start_time="25:00",
@@ -133,5 +133,5 @@ def test_error_handling(app):
     """
     test_error_handling tests error handling route for the application.
     """
-    response = app.client.get('/nonexistent_route')
+    response = app.get('/nonexistent_route')
     app.assertEqual(response.status_code, 404)

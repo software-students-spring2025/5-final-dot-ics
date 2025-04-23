@@ -25,8 +25,6 @@ def app(request):
 def mongo(app):
     cxn = pymongo.MongoClient(TEST_MONGO_URI)
     db = cxn[TEST_MONGO_DBNAME]
-    db.users.drop()
-    db.events.drop()
     yield db
 
 def test_create_user(self):

@@ -26,74 +26,71 @@ def mongo(app):
     cxn = pymongo.MongoClient(TEST_MONGO_URI)
     db = cxn[TEST_MONGO_DBNAME]
     yield db
+    db.users.drop()
+    db.events.drop() 
 
-def test_create_user(self):
+def test_create_user(app, mongo):
     """
     test_create_user tests creating a new user and logging in.
     """
-    response = self.client.post('/create_user', data=dict(
+    response = app.client.post('/create_user', data=dict(
         username='testuser',
         password='password'
     ), follow_redirects=True)
     
-    self.assertRedirects(response, '/')
+    app.assertRedirects(response, '/')
     
-    cxn = pymongo.MongoClient(TEST_MONGO_URI)
-    db = cxn[TEST_MONGO_DBNAME]
-    user = db.users.find_one({"username": "testuser"})
-    self.assertIsNotNone(user)
-    self.assertEqual(user["username"], "testuser")
+    user = mongo.db.users.find_one({"username": "testuser"})
+    app.assertIsNotNone(user)
+    app.assertEqual(user["username"], "testuser")
 
-def test_login(self):
+def test_login(app, mongo):
     """
     test_login tests logging in with the created user.
     """
-    cxn = pymongo.MongoClient(TEST_MONGO_URI)
-    db = cxn[TEST_MONGO_DBNAME]
-    db.users.insert_one({"username": "testuser", "password": "password"})
 
-    response = self.client.post('/login', data=dict(
+    mongo.db.users.insert_one({"username": "testuser", "password": "password"})
+
+    response = app.client.post('/login', data=dict(
         username='testuser',
         password='password'
     ), follow_redirects=True)
 
-    self.assertRedirects(response, '/')
+    app.assertRedirects(response, '/')
     
-    with self.client:
-        response = self.client.get('/')
-        self.assertIn(b"testuser", response.data)
+    with app.client:
+        response = app.client.get('/')
+        app.assertIn(b"testuser", response.data)
 
-def test_logout(self):
+def test_logout(mongo):
     """
     test_logout tests logging out the user.
     """
-    cxn = pymongo.MongoClient(TEST_MONGO_URI)
-    db = cxn[TEST_MONGO_DBNAME]
-    db.users.insert_one({"username": "testuser", "password": "password"})
 
-    self.client.post('/login', data=dict(
+    mongo.db.users.insert_one({"username": "testuser", "password": "password"})
+
+    app.client.post('/login', data=dict(
         username='testuser',
         password='password'
     ), follow_redirects=True)
 
-    response = self.client.get('/logout', follow_redirects=True)
+    response = app.client.get('/logout', follow_redirects=True)
     
 
-    self.assertRedirects(response, '/')
+    app.assertRedirects(response, '/')
     
 
-    with self.client:
-        response = self.client.get('/')
-        self.assertNotIn(b"testuser", response.data)
+    with app.client:
+        response = app.client.get('/')
+        app.assertNotIn(b"testuser", response.data)
 
-def test_index_page(self):
+def test_index_page(mongo):
     """
     test_index_page tests the index page when a user is logged in.
     """
-    cxn = pymongo.MongoClient(TEST_MONGO_URI)
-    db = cxn[TEST_MONGO_DBNAME]
-    user = db.users.insert_one({"username": "testuser", "password": "password"})
-    db.events.insert_one({
+
+    user = mongo.db.users.insert_one({"username": "testuser", "password": "password"})
+    mongo.db.events.insert_one({
         "user_id": user.inserted_id,
         "name": "Test Event",
         "start_time": "2025-04-21 10:00:00",
@@ -102,40 +99,39 @@ def test_index_page(self):
         "description": "Test Description"
     })
 
-    self.client.post('/login', data=dict(
+    app.client.post('/login', data=dict(
         username='testuser',
         password='password'
     ), follow_redirects=True)
 
-    response = self.client.get('/')
-    self.assertIn(b"Test Event", response.data)
-    self.assertIn(b"Test Location", response.data)
+    response = app.client.get('/')
+    app.assertIn(b"Test Event", response.data)
+    app.assertIn(b"Test Location", response.data)
 
-def test_invalid_date_format(self):
+def test_invalid_date_format(mongo):
     """
     test_invalid_date_format tests invalid date input when creating an event or other functionality.
     """
-    cxn = pymongo.MongoClient(TEST_MONGO_URI)
-    db = cxn[TEST_MONGO_DBNAME]
-    db.users.insert_one({"username": "testuser", "password": "password"})
 
-    self.client.post('/login', data=dict(
+    mongo.db.users.insert_one({"username": "testuser", "password": "password"})
+
+    app.client.post('/login', data=dict(
         username='testuser',
         password='password'
     ), follow_redirects=True)
 
-    response = self.client.post('/create_event', data=dict(
+    response = app.client.post('/create_event', data=dict(
         name="Test Event",
         start_date="2025-99-99",  # Invalid date
         start_time="25:00",
         end_time="26:00"
     ), follow_redirects=True)
 
-    self.assertIn(b"Invalid date", response.data)
+    app.assertIn(b"Invalid date", response.data)
 
-def test_error_handling(self):
+def test_error_handling(app):
     """
     test_error_handling tests error handling route for the application.
     """
-    response = self.client.get('/nonexistent_route')
-    self.assertEqual(response.status_code, 404)
+    response = app.client.get('/nonexistent_route')
+    app.assertEqual(response.status_code, 404)

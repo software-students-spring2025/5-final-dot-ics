@@ -1,63 +1,150 @@
-"""
-Tests for the Flask web application.
-"""
-
-import io
-import os
-import sys
-import time
-from pathlib import Path
-
 import pytest
-from bson.objectid import ObjectId
-
-# Add the parent directory to the path to allow importing 'app'
-PARENT_DIR = str(Path(__file__).parent.parent.absolute())
-if PARENT_DIR not in sys.path:
-    sys.path.insert(0, PARENT_DIR)
+from flask import Flask
+from flask_testing import TestCase
+from flask_login import current_user
+from bson import ObjectId
+import pymongo
+import os
 
 from app import create_app
 
-@pytest.fixture(scope="module")
-def flask_app():
-    """Create and configure a Flask app for testing."""
-    # Create app with test config
-    test_app = create_app()
-    test_app.config.update({"TESTING": True, "WTF_CSRF_ENABLED": False})
+TEST_MONGO_URI = "mongodb://localhost:27017/test_db"
+TEST_MONGO_DBNAME = "test_db"
 
-    # Wait a moment for MongoDB connection to be established
-    time.sleep(1)
+class TestWebApp(TestCase):
+    def create_app(self):
+        app = create_app()
+        app.config["MONGO_URI"] = TEST_MONGO_URI
+        app.config["MONGO_DBNAME"] = TEST_MONGO_DBNAME
+        app.config["TESTING"] = True
+        app.config["FLASK_ENV"] = "development"
+        app.secret_key = 'secret'
+        return app
 
-    # Clear all test collections before each test
-    mongo_client = test_app.extensions.get("pymongo")
-    if mongo_client:
-        db = mongo_client[os.getenv("MONGO_DBNAME", "dot-ics")]
+    def setUp(self):
+        cxn = pymongo.MongoClient(TEST_MONGO_URI)
+        db = cxn[TEST_MONGO_DBNAME]
+        db.users.drop()
+        db.events.drop()
 
-    return test_app
+    def test_create_user(self):
+        """
+        test_create_user tests creating a new user and logging in.
+        """
+        response = self.client.post('/create_user', data=dict(
+            username='testuser',
+            password='password'
+        ), follow_redirects=True)
+        
+        self.assertRedirects(response, '/')
+        
+        cxn = pymongo.MongoClient(TEST_MONGO_URI)
+        db = cxn[TEST_MONGO_DBNAME]
+        user = db.users.find_one({"username": "testuser"})
+        self.assertIsNotNone(user)
+        self.assertEqual(user["username"], "testuser")
 
+    def test_login(self):
+        """
+        test_login tests logging in with the created user.
+        """
+        cxn = pymongo.MongoClient(TEST_MONGO_URI)
+        db = cxn[TEST_MONGO_DBNAME]
+        db.users.insert_one({"username": "testuser", "password": "password"})
 
-@pytest.fixture
-def app(flask_app): 
-    """Provide the app fixture."""
-    return flask_app
+        response = self.client.post('/login', data=dict(
+            username='testuser',
+            password='password'
+        ), follow_redirects=True)
 
+        self.assertRedirects(response, '/')
+        
+        with self.client:
+            response = self.client.get('/')
+            self.assertIn(b"testuser", response.data)
 
-@pytest.fixture
-def client(app): 
-    """Create a test client for the app."""
-    return app.test_client()
+    def test_logout(self):
+        """
+        test_logout tests logging out the user.
+        """
+        cxn = pymongo.MongoClient(TEST_MONGO_URI)
+        db = cxn[TEST_MONGO_DBNAME]
+        db.users.insert_one({"username": "testuser", "password": "password"})
 
+        self.client.post('/login', data=dict(
+            username='testuser',
+            password='password'
+        ), follow_redirects=True)
 
-def test_home_page_to_login(client):  
-    """Test that the home page redirects to login"""
-    response = client.get("/")
-    assert response.status_code == 302
+        response = self.client.get('/logout', follow_redirects=True)
+        
 
+        self.assertRedirects(response, '/')
+        
 
-def test_error_handler(client): 
-    """Test the error handler."""
-    # Cause a deliberate exception by accessing a route that doesn't exist
-    response = client.get("/bad_route")
+        with self.client:
+            response = self.client.get('/')
+            self.assertNotIn(b"testuser", response.data)
 
-    # Should render the error template
-    assert b"error" in response.data.lower()
+    def test_index_page(self):
+        """
+        test_index_page tests the index page when a user is logged in.
+        """
+        cxn = pymongo.MongoClient(TEST_MONGO_URI)
+        db = cxn[TEST_MONGO_DBNAME]
+        user = db.users.insert_one({"username": "testuser", "password": "password"})
+        db.events.insert_one({
+            "user_id": user.inserted_id,
+            "name": "Test Event",
+            "start_time": "2025-04-21 10:00:00",
+            "end_time": "2025-04-21 12:00:00",
+            "location": "Test Location",
+            "description": "Test Description"
+        })
+
+        self.client.post('/login', data=dict(
+            username='testuser',
+            password='password'
+        ), follow_redirects=True)
+
+        response = self.client.get('/')
+        self.assertIn(b"Test Event", response.data)
+        self.assertIn(b"Test Location", response.data)
+
+    def test_invalid_date_format(self):
+        """
+        test_invalid_date_format tests invalid date input when creating an event or other functionality.
+        """
+        cxn = pymongo.MongoClient(TEST_MONGO_URI)
+        db = cxn[TEST_MONGO_DBNAME]
+        db.users.insert_one({"username": "testuser", "password": "password"})
+
+        self.client.post('/login', data=dict(
+            username='testuser',
+            password='password'
+        ), follow_redirects=True)
+
+        response = self.client.post('/create_event', data=dict(
+            name="Test Event",
+            start_date="2025-99-99",  # Invalid date
+            start_time="25:00",
+            end_time="26:00"
+        ), follow_redirects=True)
+
+        self.assertIn(b"Invalid date", response.data)
+
+    def test_error_handling(self):
+        """
+        test_error_handling tests error handling route for the application.
+        """
+        response = self.client.get('/nonexistent_route')
+        self.assertEqual(response.status_code, 404)
+
+    def tearDown(self):
+        """
+        Clean up after tests.
+        """
+        cxn = pymongo.MongoClient(TEST_MONGO_URI)
+        db = cxn[TEST_MONGO_DBNAME]
+        db.users.drop()
+        db.events.drop() 

@@ -11,22 +11,23 @@ from app import create_app
 TEST_MONGO_URI = "mongodb://admin:secret@mongodb:27017/"
 TEST_MONGO_DBNAME = "test_db"
 
-@pytest.fixture
-def test_create_app(self):
+@pytest.fixture(scope="session")
+def app(self):
     app = create_app()
     app.config["MONGO_URI"] = TEST_MONGO_URI
     app.config["MONGO_DBNAME"] = TEST_MONGO_DBNAME
     app.config["TESTING"] = True
     app.config["FLASK_ENV"] = "development"
     app.secret_key = 'secret'
-    return app
+    yield app
 
-@pytest.fixture
-def setUp(self):
+@pytest.fixture(scope="session", autouse=True)
+def mongo(app):
     cxn = pymongo.MongoClient(TEST_MONGO_URI)
     db = cxn[TEST_MONGO_DBNAME]
     db.users.drop()
     db.events.drop()
+    yield db
 
 def test_create_user(self):
     """
@@ -140,13 +141,3 @@ def test_error_handling(self):
     """
     response = self.client.get('/nonexistent_route')
     self.assertEqual(response.status_code, 404)
-
-@pytest.fixture
-def tearDown(self):
-    """
-    Clean up after tests.
-    """
-    cxn = pymongo.MongoClient(TEST_MONGO_URI)
-    db = cxn[TEST_MONGO_DBNAME]
-    db.users.drop()
-    db.events.drop() 

@@ -13,13 +13,13 @@ TEST_MONGO_DBNAME = "test_db"
 
 @pytest.fixture(scope="session")
 def app(request):
-    app = create_app()
-    app.config["MONGO_URI"] = TEST_MONGO_URI
-    app.config["MONGO_DBNAME"] = TEST_MONGO_DBNAME
-    app.config["TESTING"] = True
-    app.config["FLASK_ENV"] = "development"
-    app.secret_key = 'secret'
-    yield app
+    client = create_app()
+    client.config["MONGO_URI"] = TEST_MONGO_URI
+    client.config["MONGO_DBNAME"] = TEST_MONGO_DBNAME
+    client.config["TESTING"] = True
+    client.config["FLASK_ENV"] = "development"
+    client.secret_key = 'secret'
+    yield client
 
 @pytest.fixture(scope="session", autouse=True)
 def mongo(app):

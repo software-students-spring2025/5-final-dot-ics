@@ -12,7 +12,7 @@ TEST_MONGO_URI = "mongodb://admin:secret@mongodb:27017/"
 TEST_MONGO_DBNAME = "test_db"
 
 @pytest.fixture(scope="session")
-def app(self):
+def app(request):
     app = create_app()
     app.config["MONGO_URI"] = TEST_MONGO_URI
     app.config["MONGO_DBNAME"] = TEST_MONGO_DBNAME

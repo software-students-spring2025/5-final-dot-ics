@@ -4,7 +4,7 @@ Module is responsible for parsing user input,
 generating the ICS event and storing it in the MongoDB.
 """
 
-from datetime import datetime
+from datetime import date, datetime
 from zoneinfo import ZoneInfo
 from pathlib import Path
 import os
@@ -44,22 +44,23 @@ class ICSClient:
         Method returns the object.
         """
         if date_str in ("None", "null", "", None):
-            return None
+            date_str = datetime.now(ZoneInfo("America/New_York")).strftime("%Y-%m-%d")
 
         year, month, day = map(int, date_str.split("-"))
 
-        hour, minute = 0, 0
         if time_str not in ("None", "null", "", None):
             hour, minute = map(int, time_str.split(":"))
 
-        return datetime(
-            year=year,
-            month=month,
-            day=day,
-            hour=hour,
-            minute=minute,
-            tzinfo=ZoneInfo("America/New_York")
-        )
+            return datetime(
+                year=year,
+                month=month,
+                day=day,
+                hour=hour,
+                minute=minute,
+                tzinfo=ZoneInfo("America/New_York")
+            )
+        
+        return date(year=year, month=month, day=day)
 
     def parse_text_to_event_data(self, text: str) -> dict:
         """
@@ -78,8 +79,8 @@ class ICSClient:
 
         Schema:
         {{
-        "name": "string (event title)",
-        "date": "string (format: YYYY-MM-DD)",
+        "name": "string (event title, null if event title is not provided)",
+        "date": "string (null if date time is not provided, format: YYYY-MM-DD)",
         "start_time": "string (null if start time is not provided, format: HH:MM in 24-hour time)",
         "end_time": "string (null if end time is not provided, format: HH:MM in 24-hour time)",
         "location": "string (null if location is not provided)",
@@ -100,18 +101,18 @@ class ICSClient:
         try:
             event_data = json.loads(match.group(0))
             app.logger.debug("***Parsed event data: %s", json.dumps(event_data, indent=2))
+            date = event_data["date"]
             start_time = event_data.get("start_time")
-            start_dt = None
-            if start_time:
-                start_dt = self.create_dt_object(
-                    event_data["date"], start_time
-                )
+            start_dt = self.create_dt_object(date, start_time)
+
             end_time = event_data.get("end_time")
             end_dt = None
             if end_time:
-                end_dt = self.create_dt_object(
-                    event_data["date"], end_time
-                )
+                end_dt = self.create_dt_object(date, end_time)
+
+                if end_dt and start_dt and isinstance(start_dt, datetime) and isinstance(end_dt, datetime):
+                    if end_dt < start_dt:
+                        raise ValueError("End time cannot be before start time.")
 
             result = {
                 "name": event_data.get("name"),
@@ -127,6 +128,25 @@ class ICSClient:
             print("Failed to parse event JSON:", e)
             return {"error": "Invalid event format"}
 
+    def format_event_data(self, data):
+        """
+        Formats each value in the event data dictionary as a string for database storage.
+        """
+        str_event_data = {}
+        for key, value in data.items():
+            if isinstance(value, datetime):
+                str_event_data[key] = value.strftime("%b %d, %Y %l%p")
+            elif isinstance(value, date):
+                str_event_data[key] = value.strftime("%b %d, %Y")
+            else:
+                str_event_data[key] = value
+
+        # Default event name to "New Event" if none is provided
+        if not str_event_data.get("name"):
+            str_event_data["name"] = "New Event"
+
+        return str_event_data
+
     def store_event(self, entry_id, event_data, ics_file_path):
         """
         store_event method stores the event object in the MongoDB.
@@ -139,7 +159,7 @@ class ICSClient:
                 {"_id": ObjectId(entry_id)},
                 {
                     "$set": {
-                        "event_data": event_data,
+                        "event_data": self.format_event_data(event_data),
                         "ics_file": ics_content,
                         "ics_file_path": str(ics_file_path),
                     }
@@ -147,7 +167,7 @@ class ICSClient:
             )
         print(f".ICS stored in MongoDB with ID: {entry_id}")
 
-    def create_event(self, entry_id: str) -> str:
+    def create_event(self, entry_id: str) -> bool:
         """
         create_event method creates the event object from an entry in the database.
         Returns:
@@ -168,7 +188,11 @@ class ICSClient:
         cal = Calendar()
         event = Event()
 
-        event.add("summary", event_data["name"])
+        summary = event_data["name"]
+        if summary is not None:
+            event.add("summary", summary)
+        else:
+            event.add("summary", "New Event")
         start = event_data["start"]
         if start is not None:
             event.add("dtstart", start)
@@ -182,7 +206,7 @@ class ICSClient:
         if loc is not None:
             event.add("location", loc)
         event.add("uid", str(uuid.uuid4()))
-        event.add("dtstamp", datetime.now())
+        event.add("dtstamp", datetime.now(ZoneInfo("America/New_York")))
 
         cal.add_component(event)
 
@@ -224,24 +248,3 @@ def process_request():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)
-    client = ICSClient()
-    # TEXT_INPUT = (
-    #     "Friday dinner with fam at home"  # to be replaced w/ text from web-app.
-    # )
-    # ICS_FILE_PATH = client.create_event(TEXT_INPUT)
-    # print(".ICS file created.")
-
-    # # Run sample prompts
-    # samples = [
-    #     "Brunch w/ Sarah next Sunday, 11am @ the Garden Cafe. To discuss the upcoming wedding.",
-    #     "Group project meeting tmr at 10 at night in  Silver Building conference room.",
-    #     "project meeting, for flask web app, 2-3 next Sat Bobst Library rm 903",
-    #     "Meeting abt class registration, from 9 for 2.5 hrs, next Sat Bobst Library rm 903",
-    # ]
-
-    # for i, sample_text in enumerate(samples, 1):
-    #     print(f"\nPrompt {i}: {sample_text.strip()}")
-    #     event = client.parse_text_to_event_data(sample_text)
-    #     print(
-    #         json.dumps(event, indent=2, default=str) if event else "No event extracted."
-    #     )

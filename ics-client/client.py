@@ -128,9 +128,9 @@ class ICSClient:
             print("Failed to parse event JSON:", e)
             return {"error": "Invalid event format"}
 
-    def event_data_to_str(self, data):
+    def format_event_data(self, data):
         """
-        Converts event data to a string format for storing in the database.
+        Formats each value in the event data dictionary as a string for database storage.
         """
         str_event_data = {}
         for key, value in data.items():
@@ -159,7 +159,7 @@ class ICSClient:
                 {"_id": ObjectId(entry_id)},
                 {
                     "$set": {
-                        "event_data": self.event_data_to_str(event_data),
+                        "event_data": self.format_event_data(event_data),
                         "ics_file": ics_content,
                         "ics_file_path": str(ics_file_path),
                     }

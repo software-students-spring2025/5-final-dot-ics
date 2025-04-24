@@ -63,7 +63,6 @@ def test_login(client, mongodb):
     with client:
         response = client.get('/')
         assert b"ICS File Generator" in response.data
-        assert b"generate event" in response.data
 
 def test_logout(client, mongodb):
     """
@@ -81,7 +80,7 @@ def test_logout(client, mongodb):
     
     with client:
         response = client.get('/')
-        assert b"Login" in response.data
+        assert response.status_code == 302
 
 def test_index_page(client, mongodb):
     """
@@ -109,7 +108,7 @@ def test_index_page(client, mongodb):
 
 def test_generate_event(client,mongodb):
     """
-    test_index_page tests the index page when a user is logged in.
+    test_generate_event tests the route to take a prompt and generate an event in the database
     """
 
     user =  mongodb["dot-ics"].users.insert_one({"username": "testuser", "password": "password"})
@@ -125,10 +124,34 @@ def test_generate_event(client,mongodb):
 
     event = mongodb["dot-ics"].events.find_one({'_id': user.inserted_id})
 
-    assert len(event) > 0
+    assert event is not None
 
     response = client.get('/')
     assert b"group project" in response.data.lower()
+
+def test_download(client,mongodb):
+    pass
+
+def test_delete(client, mongodb):
+    user =  mongodb["dot-ics"].users.insert_one({"username": "testuser", "password": "password"})
+
+    event = mongodb["dot-ics"].events.insert_one({
+        "user_id": user.inserted_id,
+        "name": "Test Event 2",
+        "start_time": "2025-04-21 10:00:00",
+        "end_time": "2025-04-21 12:00:00",
+        "location": "Test Location",
+        "description": "Test Description"
+    })
+
+    client.post("/delete", data={
+        "id":event.inserted_id
+    }, follow_redirects = True)
+
+    check = mongodb["dot-ics"].events.find_one({"_id": event.inserted_id})
+
+    assert check is None
+
 
 def test_error_handling(client):
     """

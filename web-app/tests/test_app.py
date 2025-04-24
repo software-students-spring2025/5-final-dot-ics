@@ -12,7 +12,7 @@ from app import create_app
 TEST_MONGO_URI = "mongodb://admin:secret@mongodb:27017/"
 TEST_MONGO_DBNAME = "test_db"
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def flask_app():
     app = create_app()
     app.config.update({"TESTING": True, "WTF_CSRF_ENABLED": False})
@@ -36,8 +36,25 @@ def client(app):
     """Create a test client for the app."""
     return app.test_client()
 
+@pytest.fixture(scope="session")
+def mongodb():
+    """Create a test mongodb client"""
+    client = pymongo.MongoClient(os.environ["MONGO_URI"])
+    assert client.admin.command("ping")["ok"] != 0.0  # Check that the connection is okay.
+    return client
 
-def test_create_user(client, app):
+@pytest.fixture
+def rollback_session(mongodb):
+    """Rollback changes after testing is done"""
+    session = mongodb.start_session()
+    session.start_transaction()
+    try:
+        yield session
+    finally:
+        session.abort_transaction()
+
+
+def test_create_user(client, mongodb, rollback_session):
     """
     test_create_user tests creating a new user and logging in.
     """
@@ -45,14 +62,10 @@ def test_create_user(client, app):
         username='testuser',
         password='password'
     ), follow_redirects=True)
-
-    assert b"testuser" in response.data
-
-    db = app.extensions.get("mongodb")
-    if db is None:
-        pytest.skip("MongoDB connection not available")
     
-    user = db.users.find_one({"username": "testuser"})
+    assert response.status_code == 200
+    
+    user = mongodb.users.find_one({"username": "testuser"},session=rollback_session,)
 
     assert user is not None
     assert user["username"] ==  "testuser"

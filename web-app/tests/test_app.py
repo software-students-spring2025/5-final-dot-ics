@@ -13,13 +13,18 @@ TEST_MONGO_DBNAME = "test_db"
 
 @pytest.fixture(scope="session")
 def app(request):
-    client = create_app()
-    client.config["MONGO_URI"] = TEST_MONGO_URI
-    client.config["MONGO_DBNAME"] = TEST_MONGO_DBNAME
-    client.config["TESTING"] = True
-    client.config["FLASK_ENV"] = "development"
-    client.secret_key = 'secret'
-    yield client
+    app = create_app()
+    app.config["MONGO_URI"] = TEST_MONGO_URI
+    app.config["MONGO_DBNAME"] = TEST_MONGO_DBNAME
+    app.config["TESTING"] = True
+    app.config["FLASK_ENV"] = "development"
+    app.secret_key = 'secret'
+    yield app
+
+@pytest.fixture
+def client(app):  # pylint: disable=redefined-outer-name
+    """Create a test client for the app."""
+    return app.test_client()
 
 @pytest.fixture(scope="session", autouse=True)
 def mongo(app):
@@ -29,62 +34,61 @@ def mongo(app):
     db.users.drop()
     db.events.drop() 
 
-def test_create_user(app, mongo):
+def test_create_user(client, mongo):
     """
     test_create_user tests creating a new user and logging in.
     """
-    response = app.post('/create_user', data=dict(
+    response = client.post('/create_user', data=dict(
         username='testuser',
         password='password'
     ), follow_redirects=True)
     
-    app.assertRedirects(response, '/')
+    client.assertRedirects(response, '/')
     
     user = mongo.db.users.find_one({"username": "testuser"})
-    app.assertIsNotNone(user)
-    app.assertEqual(user["username"], "testuser")
+    assert user is not None
+    assert user["username"] ==  "testuser"
 
-def test_login(app, mongo):
+def test_login(client, mongo):
     """
     test_login tests logging in with the created user.
     """
 
     mongo.db.users.insert_one({"username": "testuser", "password": "password"})
 
-    response = app.post('/login', data=dict(
+    response = client.post('/login', data=dict(
         username='testuser',
         password='password'
     ), follow_redirects=True)
 
-    app.assertRedirects(response, '/')
+    client.assertRedirects(response, '/')
     
-    with app:
-        response = app.get('/')
-        app.assertIn(b"testuser", response.data)
+    with client:
+        response = client.get('/')
+        assert b"testuser" in response.data
 
-def test_logout(mongo):
+def test_logout(client, mongo):
     """
     test_logout tests logging out the user.
     """
 
     mongo.db.users.insert_one({"username": "testuser", "password": "password"})
 
-    app.post('/login', data=dict(
+    client.post('/login', data=dict(
         username='testuser',
         password='password'
     ), follow_redirects=True)
 
-    response = app.get('/logout', follow_redirects=True)
+    response = client.get('/logout', follow_redirects=True)
     
 
-    app.assertRedirects(response, '/')
-    
+    client.assertRedirects(response, '/')
 
-    with app:
-        response = app.get('/')
-        app.assertNotIn(b"testuser", response.data)
+    with client:
+        response = client.get('/')
+        assert b"testuser" not in response.data
 
-def test_index_page(mongo):
+def test_index_page(client, mongo):
     """
     test_index_page tests the index page when a user is logged in.
     """
@@ -99,39 +103,39 @@ def test_index_page(mongo):
         "description": "Test Description"
     })
 
-    app.post('/login', data=dict(
+    client.post('/login', data=dict(
         username='testuser',
         password='password'
     ), follow_redirects=True)
 
-    response = app.get('/')
-    app.assertIn(b"Test Event", response.data)
-    app.assertIn(b"Test Location", response.data)
+    response = client.get('/')
+    assert b"Test Event" in response.data
+    assert b"Test Location" in response.data
 
-def test_invalid_date_format(mongo):
+def test_invalid_date_format(client, mongo):
     """
     test_invalid_date_format tests invalid date input when creating an event or other functionality.
     """
 
     mongo.db.users.insert_one({"username": "testuser", "password": "password"})
 
-    app.post('/login', data=dict(
+    client.post('/login', data=dict(
         username='testuser',
         password='password'
     ), follow_redirects=True)
 
-    response = app.post('/create_event', data=dict(
+    response = client.post('/create_event', data=dict(
         name="Test Event",
         start_date="2025-99-99",  # Invalid date
         start_time="25:00",
         end_time="26:00"
     ), follow_redirects=True)
 
-    app.assertIn(b"Invalid date", response.data)
+    assert b"Invalid date" in response.data
 
-def test_error_handling(app):
+def test_error_handling(client):
     """
     test_error_handling tests error handling route for the application.
     """
-    response = app.get('/nonexistent_route')
-    app.assertEqual(response.status_code, 404)
+    response = client.get('/nonexistent_route')
+    assert response.status_code == 404

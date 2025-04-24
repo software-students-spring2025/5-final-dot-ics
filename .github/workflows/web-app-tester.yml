@@ -46,4 +46,5 @@ jobs:
         env:
           MONGO_URI: mongodb://admin:secret@localhost:27017
           MONGO_DBNAME: dot-ics
+          SECRET_KEY: asjkdfallsogjaf
         run: PYTHONPATH=. pipenv run pytest tests/ -v

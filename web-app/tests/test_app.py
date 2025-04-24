@@ -65,21 +65,17 @@ def test_create_user(client, mongodb, rollback_session):
     
     assert response.status_code == 200
     
-    user = mongodb.users.find_one({"username": "testuser"},session=rollback_session,)
+    user = mongodb.test_db.users.find_one({"username": "testuser"}, session=rollback_session)
 
     assert user is not None
     assert user["username"] ==  "testuser"
 
-def test_login(client, app):
+def test_login(client, mongodb, rollback_session):
     """
     test_login tests logging in with the created user.
     """
 
-    db = app.extensions.get("mongodb")
-    if db is None:
-        pytest.skip("MongoDB connection not available")
-
-    db.users.insert_one({"username": "testuser", "password": "password"})
+    mongodb.test_db.users.insert_one({"username": "testuser", "password": "password"})
 
     response = client.post('/login', data=dict(
         username='testuser',
@@ -90,16 +86,12 @@ def test_login(client, app):
         response = client.get('/')
         assert b"testuser" in response.data
 
-def test_logout(client, app):
+def test_logout(client, mongodb, rollback_session):
     """
     test_logout tests logging out the user.
     """
 
-    db = app.extensions.get("mongodb")
-    if db is None:
-        pytest.skip("MongoDB connection not available")
-
-    db.users.insert_one({"username": "testuser", "password": "password"})
+    mongodb.test_db.users.insert_one({"username": "testuser", "password": "password"}, session=rollback_session)
 
     client.post('/login', data=dict(
         username='testuser',
@@ -114,17 +106,14 @@ def test_logout(client, app):
         response = client.get('/')
         assert b"testuser" not in response.data
 
-def test_index_page(client, app):
+def test_index_page(client, mongodb, rollback_session):
     """
     test_index_page tests the index page when a user is logged in.
     """
 
-    db = app.extensions.get("mongodb")
-    if db is None:
-        pytest.skip("MongoDB connection not available")
+    user =  mongodb.test_db.users.insert_one({"username": "testuser", "password": "password"}, session=rollback_session)
 
-    user = db.users.insert_one({"username": "testuser", "password": "password"})
-    db.events.insert_one({
+    mongodb.test_db.events.insert_one({
         "user_id": user.inserted_id,
         "name": "Test Event",
         "start_time": "2025-04-21 10:00:00",

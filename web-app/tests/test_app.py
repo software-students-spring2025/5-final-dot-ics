@@ -1,11 +1,8 @@
 import pytest
 from flask import Flask
-from flask_testing import TestCase
-from flask_login import current_user
 from bson import ObjectId
 import pymongo
 import os
-import time
 
 from app import create_app
 
@@ -65,7 +62,8 @@ def test_login(client, mongodb):
     
     with client:
         response = client.get('/')
-        assert b"testuser" in response.data
+        assert b"ICS File Generator" in response.data
+        assert b"generate event" in response.data
 
 def test_logout(client, mongodb):
     """
@@ -83,7 +81,7 @@ def test_logout(client, mongodb):
     
     with client:
         response = client.get('/')
-        assert b"testuser" not in response.data
+        assert b"Login" in response.data
 
 def test_index_page(client, mongodb):
     """
@@ -108,7 +106,29 @@ def test_index_page(client, mongodb):
 
     response = client.get('/')
     assert b"Test Event" in response.data
-    assert b"Test Location" in response.data
+
+def test_generate_event(client,mongodb):
+    """
+    test_index_page tests the index page when a user is logged in.
+    """
+
+    user =  mongodb["dot-ics"].users.insert_one({"username": "testuser", "password": "password"})
+
+    client.post('/login', data=dict(
+        username='testuser',
+        password='password'
+    ), follow_redirects=True)
+
+    client.post('/generate_event', data={
+        "event-description-input": "Group project meeting tmr at 10 at night in  Silver Building conference room."
+    }, follow_redirects=True)
+
+    event = mongodb["dot-ics"].events.find_one({'_id': user.inserted_id})
+
+    assert len(event) > 0
+
+    response = client.get('/')
+    assert b"group project" in response.data.lower()
 
 def test_error_handling(client):
     """

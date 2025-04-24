@@ -42,8 +42,8 @@ def test_create_user(client, mongo):
         username='testuser',
         password='password'
     ), follow_redirects=True)
-    
-    assert response.status_code == 302
+
+    assert b"testuser" in response.data
     
     user = mongo.users.find_one({"username": "testuser"})
 
@@ -61,8 +61,6 @@ def test_login(client, mongo):
         username='testuser',
         password='password'
     ), follow_redirects=True)
-
-    assert response.status_code == 302
     
     with client:
         response = client.get('/')

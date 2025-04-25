@@ -84,7 +84,7 @@ def test_index_page(client, mongodb):
     test_index_page tests the index page when a user is logged in.
     """
 
-    user =  mongodb["dot-ics"].users.insert_one({"username": "testuser", "password": "password"})
+    user =  mongodb["dot-ics"].users.insert_one({"username": "testuser1", "password": "password1"})
 
     event = mongodb["dot-ics"].events.insert_one({
         "user_id": user.inserted_id,
@@ -97,13 +97,11 @@ def test_index_page(client, mongodb):
     })
 
     response1=client.post('/login', data=dict(
-        username='testuser',
-        password='password'
+        username='testuser1',
+        password='password1'
     ), follow_redirects=True)
 
     response = client.get('/')
-    print(response.data.decode())
-    print(response1.data.decode())
     assert b"Test Event" in response.d
 
 def test_generate_event(client, mongodb):

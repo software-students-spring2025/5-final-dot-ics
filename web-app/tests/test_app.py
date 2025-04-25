@@ -91,11 +91,12 @@ def test_index_page(client, mongodb):
 
     event = mongodb["dot-ics"].events.insert_one({
         "user_id": user.inserted_id,
+        "data": {
         "name": "Test Event",
         "start_time": "2025-04-21 10:00:00",
         "end_time": "2025-04-21 12:00:00",
         "location": "Test Location",
-        "description": "Test Description",
+        "description": "Test Description"},
         "ics_file": "BEGIN:VCALENDAR\nEND:VCALENDAR"
     })
 
@@ -154,7 +155,7 @@ def test_generate_event(client, mongodb, monkeypatch):
 
     assert response.status_code == 200
 
-    event = mongodb["dot-ics"].events.find_one({'_id': user.inserted_id})
+    event = mongodb["dot-ics"].events.find_one({'user_id': user.inserted_id})
 
     assert event is not None
 
@@ -164,11 +165,12 @@ def test_download(client,mongodb):
 
     event = mongodb["dot-ics"].events.insert_one({
         "user_id": user.inserted_id,
+        "data":{
         "name": "Test Event 2",
         "start_time": "2025-04-21 10:00:00",
         "end_time": "2025-04-21 12:00:00",
         "location": "Test Location",
-        "description": "Test Description",
+        "description": "Test Description"},
         "ics_file": "BEGIN:VCALENDAR\nEND:VCALENDAR"
     })
 

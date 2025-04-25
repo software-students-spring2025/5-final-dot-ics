@@ -7,7 +7,6 @@ import os
 from app import create_app
 
 TEST_MONGO_URI = "mongodb://admin:secret@mongodb:27017/"
-TEST_MONGO_DBNAME = "test_db"
 
 @pytest.fixture(scope="session")
 def flask_app():
@@ -108,36 +107,44 @@ def test_index_page(client, mongodb):
 
     assert b"Test Event" in response.context
 
-def test_generate_event(client,mongodb,monkeypatch):
+def test_generate_event(client, mongodb, monkeypatch):
     """
     test_generate_event tests the route to take a prompt and generate an event in the database
+    and mock the ML client's /run-client response.
     """
+    user = mongodb["dot-ics"].users.insert_one({"username": "testuser", "password": "password"})
 
-    user =  mongodb["dot-ics"].users.insert_one({"username": "testuser", "password": "password"})
-
+    # Log in the user
     client.post('/login', data=dict(
         username='testuser',
         password='password'
     ), follow_redirects=True)
 
-     # Mock requests.post to mimic ML client response
+    # Monkeypatch the ML client call to /run-client
     def mock_post(url, json, timeout):
+        assert "/run-client" in url  # optional check
+        assert "entry_id" in json
         class MockResponse:
             def __init__(self):
                 self.status_code = 200
             def json(self):
-                return {"status": "success", "entry_id": json["entry_id"]}
+                return {"status": "updated", "entry_id": json["entry_id"]}
         return MockResponse()
 
     monkeypatch.setattr("requests.post", mock_post)
 
-    client.post('/generate-event', data={
-        "event-description-input": "Group project meeting tmr at 10 at night in  Silver Building conference room."
+    # Call the /generate-event route
+    response = client.post('/generate-event', data={
+        "event-description-input": "Meeting with design team tomorrow at 10am in Room 205"
     }, follow_redirects=True)
 
-    event = mongodb["dot-ics"].events.find_one({'user_id': user.inserted_id})
+    assert response.status_code == 200
 
-    assert event is not None
+    # Ensure the event was stored
+    inserted_event = mongodb["dot-ics"].events.find_one({"user_id": user.inserted_id})
+    assert inserted_event is not None
+    assert "Meeting" in inserted_event["text"]
+
 
 def test_download(client,mongodb):
     user =  mongodb["dot-ics"].users.insert_one({"username": "testuser", "password": "password"})
@@ -155,7 +162,7 @@ def test_download(client,mongodb):
     response = client.get(f"/download/{str(event.inserted_id)}", follow_redirects=True)
 
     assert response.status_code == 200
-    assert response.content_type =='text/calendar'
+    assert 'text/calendar' in response.content_type
 
 
 def test_delete(client, mongodb):

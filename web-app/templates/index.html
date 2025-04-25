@@ -68,11 +68,13 @@
             const popup = document.getElementById("event-popup");
             const overlay = document.getElementById("overlay");
             const content = document.getElementById("popup-content");
+            
+            console.log(eventData.end);
 
             // Fill content
             content.innerHTML = `
                 <strong>${eventData.name}</strong><br>
-                🗓️ ${eventData.start} → ${eventData.end}<br>
+                🗓️ ${eventData.end == 'None' ? eventData.start : eventData.start + " → " + eventData.end}<br>
                 📍 ${eventData.location}<br>
                 📝 ${eventData.description}<br>
             `;

@@ -10,8 +10,8 @@ jobs:
 
     # Add MongoDB as a service container
     services:
-      ml_client:
-        image: ml-client:latest
+      ics_client:
+        image: ics_client:latest
         ports:
           - 5001:5001
         options: >-

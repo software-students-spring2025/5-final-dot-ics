@@ -7,11 +7,11 @@ name = "pypi"
 icalendar = "*"
 python-dotenv = "*"
 pymongo = "*"
+google-genai = "*"
 pytest = "*"
 pylint = "*"
 black = "*"
 flask = "*"
-google-genai = "*"
 
 [dev-packages]
 

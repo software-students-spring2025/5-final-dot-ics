@@ -209,8 +209,6 @@ def create_app():
         except Exception as e:
             flask_app.logger.error("Error deleting event: %s", str(e))
             return handle_error(e)
-    
-
 
     @flask_app.errorhandler(Exception)
     def handle_error(e):

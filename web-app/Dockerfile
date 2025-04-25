@@ -1,12 +1,25 @@
 # in Docker, it is common to base a new image on a previously-created image
 FROM python:3.11-slim
 
-# Set the working directory in the image
+RUN apt-get update && apt-get install -y \
+    cmake \
+    g++ \
+    make \
+    gcc \
+    git \
+    libpq-dev \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install pipenv
+
 WORKDIR /app
 
-# install dependencies into the image - doing this first will speed up subsequent builds, as Docker will cache this step
-COPY requirements.txt ./
-RUN pip3 install -r requirements.txt
+COPY Pipfile .
+COPY Pipfile.lock .
+
+RUN pipenv install --deploy --system
 
 # the ADD command is how you add files from your local machine into a Docker image
 # Copy the current directory contents into the container at /app

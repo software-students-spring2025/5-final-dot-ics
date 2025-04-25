@@ -91,7 +91,7 @@ def test_index_page(client, mongodb):
 
     event = mongodb["dot-ics"].events.insert_one({
         "user_id": user.inserted_id,
-        "data": {
+        "event_data": {
         "name": "Test Event",
         "start_time": "2025-04-21 10:00:00",
         "end_time": "2025-04-21 12:00:00",
@@ -165,7 +165,7 @@ def test_download(client,mongodb):
 
     event = mongodb["dot-ics"].events.insert_one({
         "user_id": user.inserted_id,
-        "data":{
+        "event_data":{
         "name": "Test Event 2",
         "start_time": "2025-04-21 10:00:00",
         "end_time": "2025-04-21 12:00:00",

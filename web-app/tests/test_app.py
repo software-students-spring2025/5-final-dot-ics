@@ -104,12 +104,38 @@ def test_index_page(client, mongodb):
     response = client.get('/')
     assert b"Test Event" in response.d
 
-def test_generate_event(client, mongodb):
+def test_generate_event(client, mongodb, monkeypatch):
     """
     test_generate_event tests the route to take a prompt and generate an event in the database
     and mock the ML client's /run-client response.
     """
     user = mongodb["dot-ics"].users.insert_one({"username": "testuser", "password": "password"})
+
+    # Monkeypatch the ML client call to /run-client
+    def mock_post(url, json, timeout):
+        assert "/run-client" in url  # optional check
+        assert "entry_id" in json
+        
+        mongodb["dot-ics"].events.update_one(
+            {"_id": ObjectId(json.entry_id)},
+            {"$set": {
+                "name": "Generated Event",
+                "start_time": "2025-05-01 15:00:00",
+                "end_time": "2025-05-01 16:00:00",
+                "location": "Zoom",
+                "description": "Automatically generated event",
+                "ics_file": "BEGIN:VCALENDAR..."
+            }}
+        )
+    
+        class MockResponse:
+            def __init__(self):
+                self.status_code = 200
+            def json(self):
+                return {"status": "updated", "entry_id": json["entry_id"]}
+        return MockResponse()
+
+    monkeypatch.setattr("requests.post", mock_post)
 
     # Log in the user
     client.post('/login', data=dict(

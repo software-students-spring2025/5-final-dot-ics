@@ -10,16 +10,6 @@ jobs:
 
     # Add MongoDB as a service container
     services:
-      ics_client:
-        image: ics_client:latest
-        ports:
-          - 5001:5001
-        options: >-
-          --health-cmd "curl --fail http://localhost:5001/run-client || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
       mongodb:
         image: mongo:latest
         env:

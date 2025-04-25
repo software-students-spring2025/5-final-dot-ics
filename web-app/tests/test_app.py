@@ -50,6 +50,7 @@ def test_login(client, mongodb):
     test_login tests logging in with the created user.
     """
 
+    mongodb["dot-ics"].users.delete_one({"username": "testuser", "password": "password"})
     mongodb["dot-ics"].users.insert_one({"username": "testuser", "password": "password"})
 
     response = client.post('/login', data=dict(
@@ -65,6 +66,7 @@ def test_logout(client, mongodb):
     """
     test_logout tests logging out the user.
     """
+
     mongodb["dot-ics"].users.delete_one({"username": "testuser", "password": "password"})
     mongodb["dot-ics"].users.insert_one({"username": "testuser", "password": "password"})
 
@@ -83,8 +85,9 @@ def test_index_page(client, mongodb):
     """
     test_index_page tests the index page when a user is logged in.
     """
-    mongodb["dot-ics"].users.delete_one({"username": "testuser", "password": "password"})
-    user =  mongodb["dot-ics"].users.insert_one({"username": "testuser", "password": "password"})
+
+    mongodb["dot-ics"].users.delete_one({"username": "testuser1", "password": "password1"})
+    user =  mongodb["dot-ics"].users.insert_one({"username": "testuser1", "password": "password1"})
 
     event = mongodb["dot-ics"].events.insert_one({
         "user_id": user.inserted_id,
@@ -109,6 +112,7 @@ def test_generate_event(client, mongodb, monkeypatch):
     test_generate_event tests the route to take a prompt and generate an event in the database
     and mock the ML client's /run-client response.
     """
+    mongodb["dot-ics"].users.delete_one({"username": "testuser", "password": "password"})
     user = mongodb["dot-ics"].users.insert_one({"username": "testuser", "password": "password"})
 
     # Monkeypatch the ML client call to /run-client

@@ -65,7 +65,7 @@ def test_logout(client, mongodb):
     """
     test_logout tests logging out the user.
     """
-
+    mongodb["dot-ics"].users.delete_one({"username": "testuser", "password": "password"})
     mongodb["dot-ics"].users.insert_one({"username": "testuser", "password": "password"})
 
     client.post('/login', data=dict(
@@ -83,8 +83,8 @@ def test_index_page(client, mongodb):
     """
     test_index_page tests the index page when a user is logged in.
     """
-
-    user =  mongodb["dot-ics"].users.insert_one({"username": "testuser1", "password": "password1"})
+    mongodb["dot-ics"].users.delete_one({"username": "testuser", "password": "password"})
+    user =  mongodb["dot-ics"].users.insert_one({"username": "testuser", "password": "password"})
 
     event = mongodb["dot-ics"].events.insert_one({
         "user_id": user.inserted_id,
@@ -96,13 +96,13 @@ def test_index_page(client, mongodb):
         "ics_file": "BEGIN:VCALENDAR\nEND:VCALENDAR"
     })
 
-    response1=client.post('/login', data=dict(
+    client.post('/login', data=dict(
         username='testuser1',
         password='password1'
     ), follow_redirects=True)
 
     response = client.get('/')
-    assert b"Test Event" in response.d
+    assert b"Test Event" in response.data
 
 def test_generate_event(client, mongodb, monkeypatch):
     """
@@ -149,6 +149,10 @@ def test_generate_event(client, mongodb, monkeypatch):
     }, follow_redirects=True)
 
     assert response.status_code == 200
+
+    event = mongodb["dot-ics"].events.find_one({'_id': user.inserted_id})
+
+    assert event is not None
 
 
 def test_download(client,mongodb):

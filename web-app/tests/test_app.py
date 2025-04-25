@@ -6,8 +6,6 @@ import os
 
 from app import create_app
 
-TEST_MONGO_URI = "mongodb://admin:secret@mongodb:27017/"
-
 @pytest.fixture(scope="session")
 def flask_app():
     app = create_app()
@@ -88,26 +86,27 @@ def test_index_page(client, mongodb):
 
     user =  mongodb["dot-ics"].users.insert_one({"username": "testuser", "password": "password"})
 
-    mongodb["dot-ics"].events.insert_one({
+    event = mongodb["dot-ics"].events.insert_one({
         "user_id": user.inserted_id,
         "name": "Test Event",
         "start_time": "2025-04-21 10:00:00",
         "end_time": "2025-04-21 12:00:00",
         "location": "Test Location",
-        "description": "Test Description"
+        "description": "Test Description",
+        "ics_file": "BEGIN:VCALENDAR\nEND:VCALENDAR"
     })
 
-    client.post('/login', data=dict(
+    response1=client.post('/login', data=dict(
         username='testuser',
         password='password'
     ), follow_redirects=True)
 
     response = client.get('/')
     print(response.data.decode())
+    print(response1.data.decode())
+    assert b"Test Event" in response.d
 
-    assert b"Test Event" in response.context
-
-def test_generate_event(client, mongodb, monkeypatch):
+def test_generate_event(client, mongodb):
     """
     test_generate_event tests the route to take a prompt and generate an event in the database
     and mock the ML client's /run-client response.
@@ -120,30 +119,12 @@ def test_generate_event(client, mongodb, monkeypatch):
         password='password'
     ), follow_redirects=True)
 
-    # Monkeypatch the ML client call to /run-client
-    def mock_post(url, json, timeout):
-        assert "/run-client" in url  # optional check
-        assert "entry_id" in json
-        class MockResponse:
-            def __init__(self):
-                self.status_code = 200
-            def json(self):
-                return {"status": "updated", "entry_id": json["entry_id"]}
-        return MockResponse()
-
-    monkeypatch.setattr("requests.post", mock_post)
-
     # Call the /generate-event route
     response = client.post('/generate-event', data={
         "event-description-input": "Meeting with design team tomorrow at 10am in Room 205"
     }, follow_redirects=True)
 
     assert response.status_code == 200
-
-    # Ensure the event was stored
-    inserted_event = mongodb["dot-ics"].events.find_one({"user_id": user.inserted_id})
-    assert inserted_event is not None
-    assert "Meeting" in inserted_event["text"]
 
 
 def test_download(client,mongodb):

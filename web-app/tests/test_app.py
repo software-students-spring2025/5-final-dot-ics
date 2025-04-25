@@ -119,7 +119,7 @@ def test_generate_event(client,mongodb):
         password='password'
     ), follow_redirects=True)
 
-    client.post('/generate_event', data={
+    client.post('/generate-event', data={
         "event-description-input": "Group project meeting tmr at 10 at night in  Silver Building conference room."
     }, follow_redirects=True)
 
@@ -142,12 +142,10 @@ def test_download(client,mongodb):
         "description": "Test Description"
     })
 
-    response = client.post(f"/download/{str(event.inserted_id)}", data={
-        "id":event.inserted_id
-    }, follow_redirects = True)
+    response = client.post(f"/download/{str(event.inserted_id)}", follow_redirects=True)
 
     assert response.status_code == 200
-    assert response.mimetype =='text/calendar'
+    assert response.content_type =='text/calendar'
 
 
 def test_delete(client, mongodb):
@@ -162,9 +160,7 @@ def test_delete(client, mongodb):
         "description": "Test Description"
     })
 
-    client.post(f"/delete/{str(event.inserted_id)}", data={
-        "id":event.inserted_id
-    }, follow_redirects = True)
+    client.post(f"/delete/{str(event.inserted_id)}", follow_redirects=True)
 
     check = mongodb["dot-ics"].events.find_one({"_id": event.inserted_id})
 

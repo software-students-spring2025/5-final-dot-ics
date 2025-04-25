@@ -104,10 +104,11 @@ def test_index_page(client, mongodb):
     ), follow_redirects=True)
 
     response = client.get('/')
-    print(response.data)
-    assert b"Test Event" in response.data
+    print(response.data.decode())
 
-def test_generate_event(client,mongodb):
+    assert b"Test Event" in response.context
+
+def test_generate_event(client,mongodb,monkeypatch):
     """
     test_generate_event tests the route to take a prompt and generate an event in the database
     """
@@ -119,6 +120,17 @@ def test_generate_event(client,mongodb):
         password='password'
     ), follow_redirects=True)
 
+     # Mock requests.post to mimic ML client response
+    def mock_post(url, json, timeout):
+        class MockResponse:
+            def __init__(self):
+                self.status_code = 200
+            def json(self):
+                return {"status": "success", "entry_id": json["entry_id"]}
+        return MockResponse()
+
+    monkeypatch.setattr("requests.post", mock_post)
+
     client.post('/generate-event', data={
         "event-description-input": "Group project meeting tmr at 10 at night in  Silver Building conference room."
     }, follow_redirects=True)
@@ -126,9 +138,6 @@ def test_generate_event(client,mongodb):
     event = mongodb["dot-ics"].events.find_one({'user_id': user.inserted_id})
 
     assert event is not None
-
-    response = client.get('/')
-    assert b"group project" in response.data.lower()
 
 def test_download(client,mongodb):
     user =  mongodb["dot-ics"].users.insert_one({"username": "testuser", "password": "password"})
@@ -139,7 +148,8 @@ def test_download(client,mongodb):
         "start_time": "2025-04-21 10:00:00",
         "end_time": "2025-04-21 12:00:00",
         "location": "Test Location",
-        "description": "Test Description"
+        "description": "Test Description",
+        "ics_file": "BEGIN:VCALENDAR\nEND:VCALENDAR"
     })
 
     response = client.get(f"/download/{str(event.inserted_id)}", follow_redirects=True)

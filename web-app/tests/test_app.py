@@ -104,6 +104,7 @@ def test_index_page(client, mongodb):
     ), follow_redirects=True)
 
     response = client.get('/')
+    print(response.data)
     assert b"Test Event" in response.data
 
 def test_generate_event(client,mongodb):
@@ -122,7 +123,7 @@ def test_generate_event(client,mongodb):
         "event-description-input": "Group project meeting tmr at 10 at night in  Silver Building conference room."
     }, follow_redirects=True)
 
-    event = mongodb["dot-ics"].events.find_one({'_id': user.inserted_id})
+    event = mongodb["dot-ics"].events.find_one({'user_id': user.inserted_id})
 
     assert event is not None
 
@@ -130,7 +131,24 @@ def test_generate_event(client,mongodb):
     assert b"group project" in response.data.lower()
 
 def test_download(client,mongodb):
-    pass
+    user =  mongodb["dot-ics"].users.insert_one({"username": "testuser", "password": "password"})
+
+    event = mongodb["dot-ics"].events.insert_one({
+        "user_id": user.inserted_id,
+        "name": "Test Event 2",
+        "start_time": "2025-04-21 10:00:00",
+        "end_time": "2025-04-21 12:00:00",
+        "location": "Test Location",
+        "description": "Test Description"
+    })
+
+    response = client.post(f"/download/{str(event.inserted_id)}", data={
+        "id":event.inserted_id
+    }, follow_redirects = True)
+
+    assert response.status_code == 200
+    assert response.mimetype =='text/calendar'
+
 
 def test_delete(client, mongodb):
     user =  mongodb["dot-ics"].users.insert_one({"username": "testuser", "password": "password"})
@@ -144,7 +162,7 @@ def test_delete(client, mongodb):
         "description": "Test Description"
     })
 
-    client.post("/delete", data={
+    client.post(f"/delete/{str(event.inserted_id)}", data={
         "id":event.inserted_id
     }, follow_redirects = True)
 

@@ -27,7 +27,7 @@ events_collection = db["events"]
 
 # Configure Gemini model
 key = os.getenv("GOOGLE_API_KEY")
-client = genai.Client(api_key=key)
+genai_client = genai.Client(api_key=key)
 
 
 class ICSClient:
@@ -88,11 +88,10 @@ class ICSClient:
         }}
         """
         app.logger.debug("**** Prompt: %s", prompt)
-        response = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
+        response = genai_client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
         app.logger.debug("**** Input Text: %s", text)
         app.logger.debug("**** Gemini Response Type: %s", type(response.text))
         app.logger.debug("**** Gemini Response: %s", response.text)
-
         match = re.search(r"\{.*\}", response.text, re.DOTALL)
         if not match:
             print("No JSON detected in response.")
@@ -103,6 +102,7 @@ class ICSClient:
             app.logger.debug("***Parsed event data: %s", json.dumps(event_data, indent=2))
             date = event_data["date"]
             start_time = event_data.get("start_time")
+            app.logger.debug("**** date= %s, start_time= %s", date, start_time)
             start_dt = self.create_dt_object(date, start_time)
 
             end_time = event_data.get("end_time")

@@ -1,7 +1,6 @@
 name: Client CI
 on: [push, pull_request]
 
-
 jobs:
   test-ics-client:
     name: Test ICS Client
@@ -35,7 +34,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install pipenv and dependencies
         run: |
@@ -46,4 +45,5 @@ jobs:
         env:
           MONGO_URI: mongodb://admin:secret@localhost:27017
           MONGO_DBNAME: test_ics_client_db
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: PYTHONPATH=. pipenv run pytest tests/ -v

@@ -22,7 +22,7 @@ h1 {
   display: flex;
   justify-content: center;
   gap: 10px;
-  margin: 30px auto;
+  margin: 30px auto 20px auto;
   max-width: 800px;
 }
 
@@ -46,6 +46,14 @@ h1 {
 
 .generate-event-button:hover {
   background-color: #38804a;
+}
+
+.description-bar {
+  font-size: 0.9em;
+  color: gray;
+  text-align: center;
+  margin: 0px auto 20px auto;
+  max-width: 800px;
 }
 
 .event-list {

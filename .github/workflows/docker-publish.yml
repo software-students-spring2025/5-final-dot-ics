@@ -1,0 +1,29 @@
+name: Build and Publish to Docker Hub
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish_images:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        run: echo ${{ secrets.DOCKER_HUB_TOKEN }} | docker login -u bdeweesevans --password-stdin
+
+      - name: Build web-app image
+        run: docker build ./web-app/ -t bdeweesevans/web-app:latest
+
+      - name: Build ics-client image
+        run: docker build ./ics-client/ -t bdeweesevans/ics-client:latest
+
+      - name: Push web-app image to Docker Hub
+        run: docker push bdeweesevans/web-app:latest
+
+      - name: Push ics-client image to Docker Hub
+        run: docker push bdeweesevans/ics-client:latest

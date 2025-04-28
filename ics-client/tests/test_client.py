@@ -134,7 +134,8 @@ class TestICSClient(unittest.TestCase):
         mock_generate_content.return_value = mock_response
 
         result = self.client.parse_text_to_event_data("Team meeting next Friday at 4-3PM on Zoom")
-        self.assertEqual(result["error"], "Invalid event format")
+        self.assertEqual(result["error"], "End time cannot be before start time.")
+        self.assertEqual(result["error_code"], 402)
 
     def test_format_event_data_datetime_fields(self):
         """
@@ -259,7 +260,7 @@ class TestICSClient(unittest.TestCase):
 
         result = self.client.create_event(entry_id)
 
-        self.assertTrue(result)
+        self.assertTrue(result[0])
         mock_find_one.assert_called_once_with({"_id": object_id}, {"text": 1})
         mock_parse_text.assert_called_once_with("Meeting at 3PM in Room 101 to discuss club activities")
         mock_open_file.assert_called_once_with(Path(f"./events/{entry_id}.ics"), "wb")
@@ -278,22 +279,21 @@ class TestICSClient(unittest.TestCase):
 
         result = self.client.create_event(entry_id)
 
-        self.assertFalse(result)
+        self.assertFalse(result[0])
         mock_find_one.assert_called_once_with({"_id": object_id}, {"text": 1})
 
     @patch.object(ICSClient, "parse_text_to_event_data")
     @patch("client.events_collection.find_one")
-    def test_create_event_raise_error(self, mock_find_one, mock_parse_text):
+    def test_create_event_with_error(self, mock_find_one, mock_parse_text):
         """Test that create_event raises ValueError when parsing fails."""
         entry_id = "67f6d1236aaf92738f8f8855"
         mock_find_one.return_value = {"text": "bad input"}
+        mock_parse_text.return_value = {"error": "Invalid event format", "error_code": 403}
 
-        mock_parse_text.return_value = {"error": "Invalid event format"}
+        result = self.client.create_event(entry_id)
 
-        with self.assertRaises(ValueError) as context:
-            self.client.create_event(entry_id)
-
-        self.assertIn("Failed to parse event", str(context.exception))
+        self.assertFalse(result[0])
+        self.assertEqual(result[1], {"error": "Invalid event format", "error_code": 403})
 
 
 class TestProcessRequestRoute(unittest.TestCase):
@@ -307,31 +307,34 @@ class TestProcessRequestRoute(unittest.TestCase):
 
     def test_missing_entry_id(self):
         """
-        Tests /run-client route returns 400 if no entry_id is provided.
+        Tests /run-client route returns 420 if no entry_id is provided.
         """
         response = self.client.post("/run-client", json={})
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 420)
         self.assertEqual(response.get_json(), {"error": "entry_id is required"})
 
-    @patch("client.ics_client.create_event", return_value=True)
+    @patch("client.ics_client.create_event")
     def test_create_event_success(self, mock_create_event):
         """
         Tests handling of /run-client route when 
         event is create_event executes successfully
         """
+        mock_create_event.return_value = (True, None)
         response = self.client.post("/run-client", json={"entry_id": "abc123"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json(), {"status": "updated", "entry_id": "abc123"})
         mock_create_event.assert_called_once_with("abc123")
 
-    @patch("client.ics_client.create_event", return_value=False)
+    @patch("client.ics_client.create_event")
     def test_create_event_failure(self, mock_create_event):
         """
         Tests /run-client route returns an error when ICS event creation fails.
         """
+        mock_create_event.return_value = (False, {"error": "No text found in the entry.", "error_code": 421})
         response = self.client.post("/run-client", json={"entry_id": "abc123"})
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.get_json(), {"error": "ICS event creation failed"})
+        self.assertEqual(response.status_code, 421)
+        self.assertEqual(response.get_json(), 
+                         {"status": "error", "error_msg": "No text found in the entry.", "error_code": 421})
         mock_create_event.assert_called_once_with("abc123")
 
 if __name__ == "__main__":

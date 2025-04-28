@@ -1,8 +1,16 @@
-[![log github events](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/event-logger.yml/badge.svg)](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/event-logger.yml)
-[![Client CI](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/client-tester.yml/badge.svg)](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/client-tester.yml)
-[![Web-App-CI](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/web-app-tester.yml/badge.svg)](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/web-app-tester.yml)
+<div align="center">
 
 # ICS File Generator
+
+</div>
+
+[![log github events](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/event-logger.yml/badge.svg)](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/event-logger.yml)
+[![ics client tests](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/client-tester.yml/badge.svg)](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/client-tester.yml)
+[![web app tests](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/web-app-tester.yml/badge.svg)](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/web-app-tester.yml)
+[![updated deployment](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/deploy.yml/badge.svg)](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/deploy.yml)
+[![update dockerhub](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/docker-publish.yml)
+
+## Description
 
 ICS File Generator is a web app that generates a calender event file based on a description of an event. The app connects to a large language model that extracts key event information (event name, date, time, location, etc.) from plain text inputted by the user and then generates a calendar event for the user. The app allows users to use abbreviations such as "tmr" and "nxt" in their event descriptions, which are not supported by apps such as Apple Calendar. A user can create an account to store all the events that they created, as well as delete unwanted entries. Users are also able to download the calendar .ics file, which can then be imported into their calendar app.
 

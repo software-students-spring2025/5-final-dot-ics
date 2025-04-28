@@ -1,4 +1,4 @@
-name: Deploy to DigitalOcean Droplet
+name: update deployment
 
 on:
   push:

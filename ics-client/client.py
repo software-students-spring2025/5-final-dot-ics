@@ -65,7 +65,7 @@ class ICSClient:
     def parse_text_to_event_data(self, text: str) -> dict:
         """
         parse_text_to_event_data parses input and generates data for creating the ICS file.
-        Returns event data, or error on error.
+        Returns event data, or error.
         """
         eastern_now = datetime.now(ZoneInfo("America/New_York"))
         today_str = eastern_now.strftime("%Y-%m-%d")
@@ -95,7 +95,7 @@ class ICSClient:
         match = re.search(r"\{.*\}", response.text, re.DOTALL)
         if not match:
             print("No JSON detected in response.")
-            return {"error": "No valid event extracted"}
+            return {"error": "No valid event extracted", "error_code": 401}
 
         try:
             event_data = json.loads(match.group(0))
@@ -112,7 +112,7 @@ class ICSClient:
 
                 if end_dt and start_dt and isinstance(start_dt, datetime) and isinstance(end_dt, datetime):
                     if end_dt < start_dt:
-                        raise ValueError("End time cannot be before start time.")
+                        return {"error": "End time cannot be before start time.", "error_code": 402}
 
             result = {
                 "name": event_data.get("name"),
@@ -126,7 +126,7 @@ class ICSClient:
 
         except (json.JSONDecodeError, KeyError, TypeError, ValueError) as e:
             print("Failed to parse event JSON:", e)
-            return {"error": "Invalid event format"}
+            return {"error": "Invalid event format", "error_code": 403}
 
     def format_event_data(self, data):
         """
@@ -171,19 +171,20 @@ class ICSClient:
         """
         create_event method creates the event object from an entry in the database.
         Returns:
-            bool: True if the .ics file was created and stored successfully, False if the entry has no text.
+            tuple: (bool, error dict)
+            bool is True if the .ics file was created and stored successfully, False if the entry has no text.
         """
         doc = events_collection.find_one({"_id": ObjectId(entry_id)}, {"text": 1})
         text = doc.get("text")
 
         if not text:
-            return False
+            return (False, {"error": "No text found in the entry.", "error_code": 421})
         
         app.logger.debug("*** create_event(): Found entry_text: %s", text)
         event_data = self.parse_text_to_event_data(text)
 
         if "error" in event_data:
-            raise ValueError(f"Failed to parse event: {event_data['error']}")
+            return (False, event_data)
 
         cal = Calendar()
         event = Event()
@@ -221,7 +222,7 @@ class ICSClient:
             app.logger.debug("*** create_event(): event saved to file")
 
         self.store_event(entry_id, event_data, ics_path)
-        return True
+        return (True, None)
 
 app = Flask(__name__)
 ics_client = ICSClient()
@@ -239,12 +240,13 @@ def process_request():
     entry_id = data.get("entry_id")
 
     if not entry_id:
-        return jsonify({"error": "entry_id is required"}), 400
+        return jsonify({"error": "entry_id is required"}), 420
     
-    isSuccess = ics_client.create_event(entry_id)
-    if isSuccess:
+    result = ics_client.create_event(entry_id)
+    if result[0]:
         return jsonify({"status": "updated", "entry_id": entry_id})
-    return jsonify({"error": "ICS event creation failed"}), 400
+    err_code = result[1]["error_code"]
+    return jsonify({"status": "error", "error_msg": result[1]["error"], "error_code": err_code}), err_code
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)

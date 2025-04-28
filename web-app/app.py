@@ -144,6 +144,14 @@ def create_app():
         """
         logout_user()
         return redirect(url_for("index"))
+    
+    @flask_app.route("/home")
+    @login_required
+    def home():
+        """
+        Route for redirecting user to home page
+        """
+        return redirect(url_for("index"))
 
     @flask_app.route("/")
     @login_required
@@ -156,7 +164,7 @@ def create_app():
 
         #find user with user id then fetch the events of that user
         user_id = current_user.get_id()
-        events = db.events.find({"user_id": ObjectId(user_id)}).sort("created_at", pymongo.DESCENDING)
+        events = db.events.find({"user_id": ObjectId(user_id), "event_data": {"$exists": True}}).sort("created_at", pymongo.DESCENDING)
         event_list = list(events)
         return render_template("index.html", events = event_list)
     
@@ -266,7 +274,19 @@ def create_app():
                 updated_entry_id,
             )
             return redirect(url_for("index"))
-        return "Error creating ICS file", 500
+        
+        # Error handling when error code is >= 400
+        data = response.json()
+        error_code = data.get("error_code")
+        if error_code < 420:
+            error_message = """Error generating event and ICS file. 
+                                Please make sure to enter a valid event description. 
+                                *Note* The event date should not span multiple days.
+                                Example: Birthday party next Friday from 5pm to 8pm at Lisa's house. 
+                            """
+        else:
+            error_message = "Error generating event and ICS file. Please return to the homepage and try again."
+        return render_template("error.html", error=error_message)  
 
     return flask_app
 

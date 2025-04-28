@@ -6,7 +6,16 @@
 
 ICS File Generator is a web app that generates a calender event file based on a description of an event. The app connects to a large language model that extracts key event information (event name, date, time, location, etc.) from plain text inputted by the user and then generates a calendar event for the user. The app allows users to use abbreviations such as "tmr" and "nxt" in their event descriptions, which are not supported by apps such as Apple Calendar. A user can create an account to store all the events that they created, as well as delete unwanted entries. Users are also able to download the calendar .ics file, which can then be imported into their calendar app.
 
+## Temporary Deployment Link
+
+*Deployed with a DigitalOcean Droplet.*
+
+http://178.128.145.113:10000/
+
 ## DockerHub Container Links
+
+- [ics-client](https://hub.docker.com/r/bdeweesevans/ics-client)
+- [web-app](https://hub.docker.com/r/bdeweesevans/web-app)
 
 ## Authors
 

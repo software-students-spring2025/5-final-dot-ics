@@ -1,4 +1,4 @@
-name: Build and Publish to Docker Hub
+name: update dockerhub
 
 on:
   push:

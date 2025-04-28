@@ -8,6 +8,8 @@ ICS File Generator is a web app that generates a calender event file based on a 
 
 ## Temporary Deployment Link
 
+*Deployment is hosted on a DigitalOcean Droplet*
+
 http://178.128.145.113:10000/
 
 ## DockerHub Container Links

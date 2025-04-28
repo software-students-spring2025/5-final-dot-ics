@@ -1,6 +1,8 @@
 [![log github events](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/event-logger.yml/badge.svg)](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/event-logger.yml)
-[![Client CI](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/client-tester.yml/badge.svg)](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/client-tester.yml)
-[![Web-App-CI](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/web-app-tester.yml/badge.svg)](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/web-app-tester.yml)
+[![ics client tests](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/client-tester.yml/badge.svg)](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/client-tester.yml)
+[![web app tests](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/web-app-tester.yml/badge.svg)](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/web-app-tester.yml)
+[![updated deployment](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/deploy.yml/badge.svg)](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/deploy.yml)
+[![update dockerhub](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/software-students-spring2025/5-final-dot-ics/actions/workflows/docker-publish.yml)
 
 # ICS File Generator
 

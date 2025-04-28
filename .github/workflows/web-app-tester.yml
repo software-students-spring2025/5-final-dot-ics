@@ -1,4 +1,4 @@
-name: Web-App-CI
+name: web app tests
 on: [push, pull_request]
 
 

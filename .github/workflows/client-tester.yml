@@ -1,4 +1,4 @@
-name: Client CI
+name: ics client tests
 on: [push, pull_request]
 
 jobs:

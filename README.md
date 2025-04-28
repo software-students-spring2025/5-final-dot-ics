@@ -8,6 +8,9 @@ ICS File Generator is a web app that generates a calender event file based on a 
 
 ## DockerHub Container Links
 
+- [ics-client](https://hub.docker.com/r/bdeweesevans/ics-client)
+- [web-app](https://hub.docker.com/r/bdeweesevans/web-app)
+
 ## Authors
 
 - [Shayne Chan](https://github.com/shayne773)

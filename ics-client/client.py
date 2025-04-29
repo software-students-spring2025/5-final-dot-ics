@@ -135,7 +135,7 @@ class ICSClient:
         str_event_data = {}
         for key, value in data.items():
             if isinstance(value, datetime):
-                str_event_data[key] = value.strftime("%b %d, %Y %l%p")
+                str_event_data[key] = value.strftime("%b %d, %Y %l:%M%p")
             elif isinstance(value, date):
                 str_event_data[key] = value.strftime("%b %d, %Y")
             else:

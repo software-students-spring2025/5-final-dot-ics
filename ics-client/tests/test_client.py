@@ -148,8 +148,8 @@ class TestICSClient(unittest.TestCase):
         }
         formatted = self.client.format_event_data(data)
         self.assertEqual(formatted["name"],"Dinner with Friends")
-        self.assertEqual(formatted["start"], "Apr 23, 2025  6PM")
-        self.assertEqual(formatted["end"], "Apr 23, 2025  8PM")
+        self.assertEqual(formatted["start"], "Apr 23, 2025  6:00PM")
+        self.assertEqual(formatted["end"], "Apr 23, 2025  8:00PM")
         
     def test_format_event_data_date_only(self):
         """
